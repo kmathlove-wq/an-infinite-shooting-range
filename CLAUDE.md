@@ -109,3 +109,16 @@ push 명령: `git push origin main` (remote URL에 인증 포함됨)
 - `controls.moveForward/Right`는 PointerLockControls 내장 메서드로 카메라 방향 기준 이동
 - ADS 중 `gunRecoil()`의 `position.z` 오프셋은 ADS/HIP lerp target에 더해지므로 시각적 충돌 없음
 - Three.js importmap은 `index.html`에 정의됨 — `main.js`에서 `import 'three'`로 사용 가능
+
+## 작업 규칙
+
+### 절약 규칙
+- 이미 읽은 파일은 다시 확인하지 않는다
+- 불필요한 도구 호출은 하지 않는다
+- 가능한 도구 호출은 동시에 실행한다
+- 20줄 이상의 불필요한 출력은 서브에이전트에 위임한다
+- 사용자가 이미 설명한 내용을 다시 반복하지 않는다
+
+### 기타 규칙
+- 새로 알게된 내용은 반드시 자동으로 이 파일(CLAUDE.md)에 추가한다
+- 이 파일은 반드시 200줄이 넘으면 안 된다
