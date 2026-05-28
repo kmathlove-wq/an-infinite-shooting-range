@@ -87,3 +87,22 @@ body {
 #ammo {
   color: #ffcc00;
 }
+
+/* 조준경 오버레이 */
+#scope-overlay {
+  position: fixed;
+  inset: 0;
+  display: none;
+  pointer-events: none;
+  z-index: 6;
+  background: radial-gradient(circle 158px at center, transparent 155px, rgba(0,0,0,0.97) 162px);
+}
+
+#scope-overlay svg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 320px;
+  height: 320px;
+}
