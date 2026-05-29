@@ -141,13 +141,16 @@ document.addEventListener('mousedown', (e) => {
     shoot();
   } else if (e.button === 2 && controls.isLocked) {
     isAiming = true;
-    if (scopeGroup) scopeGroup.visible = true;
+    if (scopeGroup) scopeGroup.visible = false;
+    scopeOverlay.style.display = 'block';
+    crosshairEl.style.display = 'none';
   }
 });
 document.addEventListener('mouseup', (e) => {
   if (e.button === 2) {
     isAiming = false;
-    if (scopeGroup) scopeGroup.visible = false;
+    scopeOverlay.style.display = 'none';
+    crosshairEl.style.display = 'block';
   }
 });
 
