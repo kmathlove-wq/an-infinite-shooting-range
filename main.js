@@ -79,7 +79,7 @@ const GRAVITY = 250;
 // ADS
 let isAiming = false;
 const HIP = { x: 0.2,  y: -0.18, z: -0.45, fov: 45,   scale: 0.002  };
-const ADS = { x: -0.094, y: -0.11, z: -0.394, fov: 15, scale: 0.002  };
+const ADS = { x: 0,      y: -0.11, z: -0.394, fov: 15, scale: 0.002  };
 
 // Game state
 let score = 0;
@@ -142,14 +142,12 @@ document.addEventListener('mousedown', (e) => {
   } else if (e.button === 2 && controls.isLocked) {
     isAiming = true;
     if (scopeGroup) scopeGroup.visible = true;
-    crosshairEl.style.display = 'none';
   }
 });
 document.addEventListener('mouseup', (e) => {
   if (e.button === 2) {
     isAiming = false;
     if (scopeGroup) scopeGroup.visible = false;
-    crosshairEl.style.display = '';
   }
 });
 
