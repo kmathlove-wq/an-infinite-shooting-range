@@ -140,6 +140,7 @@ document.addEventListener('mousedown', (e) => {
     shoot();
   } else if (e.button === 2 && controls.isLocked) {
     isAiming = true;
+    if (gunWrapper) gunWrapper.visible = false;
     scopeOverlay.style.display = 'block';
     crosshairEl.style.display = 'none';
   }
@@ -147,6 +148,7 @@ document.addEventListener('mousedown', (e) => {
 document.addEventListener('mouseup', (e) => {
   if (e.button === 2) {
     isAiming = false;
+    if (gunWrapper) gunWrapper.visible = true;
     scopeOverlay.style.display = 'none';
     crosshairEl.style.display = '';
   }
@@ -197,7 +199,10 @@ mtlLoader.load('models/obj.mtl', (materials) => {
     const capRear = new THREE.Mesh(capGeo, capMat);
     capRear.rotation.z = Math.PI / 2;
     capRear.position.set(122, 55, 0);
-    gunWrapper.add(scopeTube, capFront, capRear);
+    const scopeGroup = new THREE.Group();
+    scopeGroup.add(scopeTube, capFront, capRear);
+    scopeGroup.visible = false;
+    gunWrapper.add(scopeGroup);
 
     gunWrapper.scale.setScalar(HIP.scale);
     gunWrapper.rotation.y = -Math.PI / 2;
