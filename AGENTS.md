@@ -12,8 +12,8 @@ Tinkercad에서 제작한 총 모델(`models/tinker.obj`)을 플레이어 무기
 Pixel-Sniper/
 ├── AGENTS.md         # Codex 작업 지침
 ├── CLAUDE.md         # 기존 Claude 작업 지침
-├── assets/
-│   └── tinker-model-favicon.svg # models/tinker.obj 기반 브라우저 탭 favicon
+├── favicon.ico       # models/tinker.obj 기반 브라우저 탭 favicon
+├── favicon.svg       # 같은 favicon의 SVG 버전
 ├── index.html        # importmap + HUD/overlay/modal DOM
 ├── main.js           # 게임 로직 전체 (Three.js ES module)
 ├── sytel.css         # 전체화면 캔버스 + HUD/모달 스타일
