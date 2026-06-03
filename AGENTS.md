@@ -87,8 +87,8 @@ animate()
 
 - `startTimer()`는 첫 포인터 락 시 시작된다.
 - 완료 시 `saveRecord(finalTime)`으로 localStorage와 Firebase Realtime Database에 저장한다.
-- `records-btn` 클릭 시 Firebase `leaderboard`를 읽어 상위 10개를 표시한다.
-- Firebase 조회 실패 시 localStorage 기록으로 fallback한다.
+- `records-btn` 클릭 시 Firebase `leaderboard`와 localStorage 기록을 병합/중복 제거한 뒤 상위 10개를 표시한다.
+- Firebase 조회 실패 시에도 localStorage 기록만으로 순위를 표시한다.
 
 ### 총 모델과 ADS
 

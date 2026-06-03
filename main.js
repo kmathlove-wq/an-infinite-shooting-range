@@ -214,10 +214,11 @@ function resetTimer() {
 }
 
 function saveRecord(ms) {
+  const record = { time: ms, date: new Date().toISOString() };
   const local = getLocalRecords();
-  local.push({ time: ms, date: new Date().toISOString() });
+  local.push(record);
   localStorage.setItem('pixelSniperRecords', JSON.stringify(local));
-  push(ref(db, 'leaderboard'), { time: ms, date: new Date().toISOString() }).catch(() => {});
+  push(ref(db, 'leaderboard'), record).catch(() => {});
 }
 
 function getLocalRecords() {
@@ -225,21 +226,45 @@ function getLocalRecords() {
   catch { return []; }
 }
 
+function normalizeRecords(records) {
+  const seen = new Set();
+  return records
+    .map((record) => ({
+      time: Number(record?.time),
+      date: record?.date || new Date().toISOString()
+    }))
+    .filter((record) => Number.isFinite(record.time) && record.time >= 0)
+    .filter((record) => {
+      const key = `${record.time}-${record.date}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) => a.time - b.time || new Date(a.date) - new Date(b.date));
+}
+
+async function getFirebaseRecords() {
+  const snapshot = await get(ref(db, 'leaderboard'));
+  const records = [];
+  snapshot.forEach(child => records.push(child.val()));
+  return records;
+}
+
 async function openRecordsModal() {
   document.getElementById('records-modal').classList.remove('hidden');
   document.getElementById('records-list').innerHTML = '<li class="no-record">불러오는 중...</li>';
   document.getElementById('my-latest-record').style.display = 'none';
 
-  let top10 = [];
+  let remote = [];
   try {
-    const snapshot = await get(ref(db, 'leaderboard'));
-    const all = [];
-    snapshot.forEach(child => all.push(child.val()));
-    top10 = all.sort((a, b) => a.time - b.time).slice(0, 10);
+    remote = await getFirebaseRecords();
   } catch {
-    top10 = getLocalRecords().sort((a, b) => a.time - b.time).slice(0, 10);
+    remote = [];
   }
 
+  const local = getLocalRecords();
+  const allRecords = normalizeRecords([...remote, ...local]);
+  const top10 = allRecords.slice(0, 10);
   const listEl = document.getElementById('records-list');
   listEl.innerHTML = top10.length === 0
     ? '<li class="no-record">아직 기록이 없어요</li>'
@@ -248,13 +273,12 @@ async function openRecordsModal() {
         return `<li><span class="rank-num">${i + 1}위</span><span class="rank-time">${formatTime(r.time)}</span><span class="rank-date">${date}</span></li>`;
       }).join('');
 
-  const local = getLocalRecords();
   const latestEl = document.getElementById('my-latest-record');
-  if (local.length > 0) {
-    const latest = local[local.length - 1];
-    const allSorted = top10;
-    const rank = allSorted.findIndex(r => r.time >= latest.time) + 1 || allSorted.length + 1;
-    latestEl.innerHTML = `<div class="my-latest">내 최근 기록<br><span class="rank-time">${formatTime(latest.time)}</span></div>`;
+  const latestRecords = normalizeRecords([local[local.length - 1]]);
+  if (latestRecords.length > 0) {
+    const latest = latestRecords[0];
+    const rank = allRecords.findIndex(r => r.time === latest.time && r.date === latest.date) + 1;
+    latestEl.innerHTML = `<div class="my-latest">내 최근 기록 ${rank > 0 ? `${rank}위` : ''}<br><span class="rank-time">${formatTime(latest.time)}</span></div>`;
     latestEl.style.display = 'block';
   }
 }
