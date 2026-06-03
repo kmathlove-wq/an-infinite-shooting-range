@@ -16,7 +16,7 @@ Pixel-Sniper/
 ├── favicon.svg       # 같은 favicon의 SVG 버전
 ├── index.html        # importmap + HUD/overlay/modal DOM
 ├── main.js           # 게임 로직 전체 (Three.js ES module)
-├── sytel.css         # 전체화면 캔버스 + HUD/모달 스타일
+├── style.css         # 전체화면 캔버스 + HUD/모달 스타일
 ├── CNAME             # GitHub Pages custom domain
 └── models/
     ├── tinker.obj    # Tinkercad 제작 총 모델 (X: -179~135, Y: 15~117, Z: 1~36)
@@ -164,7 +164,6 @@ push 명령: `git push origin main` (remote URL에 인증 포함됨)
 - `scopeGroup.visible`은 현재 false로 유지되고, 실제 조준 화면은 `#scope-overlay`가 담당한다
 - Three.js importmap은 `index.html`에 정의됨 — `main.js`에서 `import 'three'`로 사용 가능
 - Firebase 네트워크 실패 시 기록 조회는 localStorage로 fallback되지만, Firebase CDN 자체 로딩 실패는 앱 초기화에 영향을 줄 수 있다
-- `sytel.css` 파일명 오타처럼 보이지만 `index.html`이 이 이름을 참조하므로 변경 시 함께 수정해야 한다
 
 ## 작업 규칙
 

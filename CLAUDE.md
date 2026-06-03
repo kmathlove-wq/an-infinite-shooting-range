@@ -12,7 +12,7 @@ Tinkercad에서 제작한 총 모델(`models/tinker.obj`)을 플레이어 무기
 Pixel-Sniper/
 ├── index.html        # importmap + HUD DOM (overlay, crosshair, hud)
 ├── main.js           # 게임 로직 전체 (Three.js ES module)
-├── sytel.css         # 전체화면 캔버스 + HUD 스타일
+├── style.css         # 전체화면 캔버스 + HUD 스타일
 └── models/
     ├── tinker.obj    # Tinkercad 제작 총 모델 (X: -179~135, Y: 15~117, Z: 1~36)
     └── obj.mtl       # 색상 재질 정의
