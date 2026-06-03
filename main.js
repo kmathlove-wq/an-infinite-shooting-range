@@ -222,8 +222,24 @@ function saveRecord(ms) {
 }
 
 function getLocalRecords() {
-  try { return JSON.parse(localStorage.getItem('pixelSniperRecords') || '[]'); }
-  catch { return []; }
+  try {
+    const records = JSON.parse(localStorage.getItem('pixelSniperRecords') || '[]');
+    return normalizeRecords(removeExistingSixSecondRecords(Array.isArray(records) ? records : []));
+  } catch {
+    return [];
+  }
+}
+
+function removeExistingSixSecondRecords(records) {
+  if (localStorage.getItem('pixelSniperRemovedSixSecondRecord') === '1') return records;
+
+  const cleaned = records.filter((record) => {
+    const time = Number(record?.time);
+    return !Number.isFinite(time) || time < 6000 || time >= 7000;
+  });
+  localStorage.setItem('pixelSniperRecords', JSON.stringify(cleaned));
+  localStorage.setItem('pixelSniperRemovedSixSecondRecord', '1');
+  return cleaned;
 }
 
 function normalizeRecords(records) {
@@ -266,12 +282,14 @@ async function openRecordsModal() {
   const allRecords = normalizeRecords([...remote, ...local]);
   const top10 = allRecords.slice(0, 10);
   const listEl = document.getElementById('records-list');
-  listEl.innerHTML = top10.length === 0
-    ? '<li class="no-record">아직 기록이 없어요</li>'
-    : top10.map((r, i) => {
-        const date = new Date(r.date).toLocaleDateString('ko-KR');
-        return `<li><span class="rank-num">${i + 1}위</span><span class="rank-time">${formatTime(r.time)}</span><span class="rank-date">${date}</span></li>`;
-      }).join('');
+  listEl.innerHTML = Array.from({ length: 10 }, (_, i) => {
+    const record = top10[i];
+    if (!record) {
+      return `<li class="empty-rank"><span class="rank-num">${i + 1}위</span><span class="rank-time">--:--.--</span><span class="rank-date">기록 없음</span></li>`;
+    }
+    const date = new Date(record.date).toLocaleDateString('ko-KR');
+    return `<li><span class="rank-num">${i + 1}위</span><span class="rank-time">${formatTime(record.time)}</span><span class="rank-date">${date}</span></li>`;
+  }).join('');
 
   const latestEl = document.getElementById('my-latest-record');
   const latestRecords = normalizeRecords([local[local.length - 1]]);

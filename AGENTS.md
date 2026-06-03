@@ -89,6 +89,7 @@ animate()
 - 완료 시 `saveRecord(finalTime)`으로 localStorage와 Firebase Realtime Database에 저장한다.
 - `records-btn` 클릭 시 Firebase `leaderboard`와 localStorage 기록을 병합/중복 제거한 뒤 상위 10개를 표시한다.
 - Firebase 조회 실패 시에도 localStorage 기록만으로 순위를 표시한다.
+- 기존 localStorage의 6초대 테스트 기록은 `pixelSniperRemovedSixSecondRecord` 플래그로 1회만 정리한다.
 
 ### 총 모델과 ADS
 
