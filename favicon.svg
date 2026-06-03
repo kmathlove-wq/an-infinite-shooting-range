@@ -1,23 +1,29 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="무한사격장 favicon">
   <rect width="512" height="512" fill="#ffffff"/>
-  <g transform="translate(36 176)" stroke="#101418" stroke-width="10" stroke-linejoin="round" stroke-linecap="round">
-    <rect x="0" y="70" width="92" height="42" fill="#30363a"/>
-    <rect x="16" y="82" width="28" height="18" fill="#0b0d0e" stroke="none"/>
-    <rect x="82" y="80" width="162" height="22" fill="#1f2528"/>
-    <rect x="222" y="54" width="154" height="76" fill="#697076"/>
-    <rect x="282" y="70" width="120" height="86" fill="#3d4448"/>
-    <rect x="350" y="74" width="46" height="28" fill="#00a0d7" stroke="#0b0d0e"/>
-    <rect x="250" y="108" width="120" height="24" fill="#252a2d"/>
-    <rect x="292" y="132" width="44" height="74" fill="#1f2427"/>
-    <path d="M384 88h62v26h-42v76h-54v-28h26z" fill="#5f666b"/>
-    <path d="M352 132h34l22 70h-42z" fill="#24292c"/>
-    <rect x="246" y="18" width="166" height="40" rx="4" fill="#242a2d"/>
-    <rect x="236" y="10" width="54" height="56" rx="4" fill="#30363a"/>
-    <rect x="366" y="10" width="58" height="56" rx="4" fill="#30363a"/>
-    <rect x="306" y="-20" width="72" height="46" rx="4" fill="#202528"/>
-    <rect x="326" y="-44" width="34" height="26" fill="#2f3538"/>
-    <rect x="262" y="86" width="22" height="18" fill="#141719" stroke="none"/>
-    <rect x="306" y="86" width="22" height="18" fill="#141719" stroke="none"/>
-    <rect x="52" y="62" width="210" height="14" fill="#111517" stroke="none"/>
+  <g transform="translate(20 104) rotate(14 236 152)" stroke="#1c3345" stroke-width="8" stroke-linejoin="round" stroke-linecap="round">
+    <rect x="0" y="44" width="214" height="34" fill="#20282d"/>
+    <rect x="0" y="20" width="214" height="20" fill="#182126"/>
+    <rect x="4" y="82" width="178" height="12" fill="#20282d"/>
+    <rect x="178" y="38" width="78" height="26" fill="#d8f5ff" opacity="0.58"/>
+
+    <path d="M170 70h170l48 36h-68l-8 24h-74l-12-28h-74z" fill="#3dbb42"/>
+    <path d="M338 106h122v60h-34v-30h-60v30h-36z" fill="#3dbb42"/>
+    <path d="M332 128h44l-22 68h-42z" fill="#20282d"/>
+    <rect x="210" y="110" width="72" height="62" fill="#20282d"/>
+    <rect x="420" y="104" width="42" height="72" fill="#20282d"/>
+
+    <rect x="250" y="0" width="96" height="42" fill="#20282d"/>
+    <rect x="344" y="20" width="36" height="36" fill="#20282d"/>
+    <rect x="378" y="10" width="98" height="56" fill="#20282d"/>
+    <rect x="386" y="28" width="88" height="8" fill="#33485a"/>
+    <circle cx="242" cy="64" r="18" fill="#20282d"/>
+    <circle cx="348" cy="74" r="18" fill="#20282d"/>
+    <rect x="282" y="42" width="62" height="20" fill="#20282d"/>
+    <rect x="318" y="24" width="22" height="24" fill="#5e6970"/>
+
+    <rect x="180" y="82" width="16" height="16" transform="rotate(-28 188 90)" fill="#a9b5c0"/>
+    <rect x="258" y="122" width="16" height="16" transform="rotate(-28 266 130)" fill="#a9b5c0"/>
+    <rect x="336" y="134" width="16" height="16" transform="rotate(-28 344 142)" fill="#a9b5c0"/>
+    <path d="M148 78l34 12-26 12z" fill="#2ea737"/>
   </g>
 </svg>
