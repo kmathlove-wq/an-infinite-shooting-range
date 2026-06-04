@@ -34,10 +34,13 @@ const controls = new PointerLockControls(camera, document.body);
 const overlay = document.getElementById('overlay');
 const scopeOverlay = document.getElementById('scope-overlay');
 const crosshairEl = document.getElementById('crosshair');
-overlay.addEventListener('click', () => controls.lock());
+const infiniteModeBtn = document.getElementById('infinite-mode-btn');
+const competitiveModeBtn = document.getElementById('competitive-mode-btn');
+infiniteModeBtn.addEventListener('click', () => startGame('infinite'));
+competitiveModeBtn.addEventListener('click', () => startGame('competitive'));
 controls.addEventListener('lock', () => {
   overlay.classList.add('hidden');
-  if (!gameActive && !gameComplete) startTimer();
+  if (currentMode === 'competitive' && !gameActive && !gameComplete) startTimer();
 });
 controls.addEventListener('unlock', () => {
   if (gameComplete) {
@@ -177,6 +180,7 @@ let timerStart = null;
 let timerInterval = null;
 let gameActive = false;
 let gameComplete = false;
+let currentMode = null;
 let gunWrapper = null;
 let scopeGroup = null;
 
@@ -217,6 +221,42 @@ function resetTimer() {
   timerStart = null;
   gameActive = false;
   document.getElementById('timer').textContent = '00:00.00';
+}
+
+function resetTargets() {
+  targets.forEach(t => scene.remove(t));
+  targets.length = 0;
+  spawnTargets();
+}
+
+function startGame(mode) {
+  const shouldReset = currentMode !== mode || gameComplete;
+  currentMode = mode;
+  gameComplete = false;
+  document.getElementById('completion-message').classList.add('hidden');
+
+  if (shouldReset) {
+    resetTargets();
+    score = 0;
+    ammo = 10;
+    verticalVelocity = 0;
+    slideTimer = 0;
+    slideDirection = null;
+    camera.position.set(0, GROUND_Y, 150);
+  }
+
+  if (mode === 'competitive') {
+    if (shouldReset) resetTimer();
+  } else {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    timerStart = null;
+    gameActive = true;
+    document.getElementById('timer').textContent = '무한모드';
+  }
+
+  updateHUD();
+  controls.lock();
 }
 
 function saveRecord(ms) {
@@ -312,9 +352,7 @@ function closeRecordsModal() {
 }
 
 function restartGame() {
-  targets.forEach(t => scene.remove(t));
-  targets.length = 0;
-  spawnTargets();
+  resetTargets();
   score = 0;
   ammo = 10;
   resetTimer();
@@ -360,7 +398,13 @@ function shoot() {
     score++;
     updateHUD();
     spawnHitEffect(hits[0].point);
-    if (targets.length === 0) stopTimer();
+    if (targets.length === 0) {
+      if (currentMode === 'infinite') {
+        spawnTargets();
+      } else {
+        stopTimer();
+      }
+    }
   }
 
   gunRecoil();
@@ -464,7 +508,11 @@ document.getElementById('records-modal').addEventListener('click', (e) => {
 });
 document.getElementById('restart-btn').addEventListener('click', () => {
   gameComplete = false;
-  restartGame();
+  if (currentMode === 'infinite') {
+    startGame('infinite');
+  } else {
+    restartGame();
+  }
 });
 
 window.addEventListener('resize', () => {

@@ -5,6 +5,7 @@
 Three.js 기반 1인칭 FPS 스나이퍼 게임. 별도 빌드 툴 없이 순수 ES 모듈 + CDN으로 동작한다.
 Tinkercad에서 제작한 총 모델(`models/tinker.obj`)을 플레이어 무기로 사용한다.
 조준경 메시는 Three.js에서 `gunWrapper` 자식으로 직접 생성하지만, 실제 ADS 화면은 DOM 기반 `#scope-overlay`로 표시한다.
+시작 오버레이에서 `무한모드`와 `경쟁모드`를 선택한다.
 
 ## 파일 구조
 
@@ -75,6 +76,11 @@ animate()
 - 빨간 박스 표적 8개
 - 카메라 자식 총구 플래시용 `PointLight`
 
+### 게임 모드
+
+- `competitive` 경쟁모드: 기존 타임어택 모드. 모든 표적 제거 시 타이머를 멈추고 기록을 저장한다.
+- `infinite` 무한모드: 기록을 측정/저장하지 않는다. 모든 표적 제거 시 즉시 새 표적 8개를 생성한다.
+
 ### 발사 시스템
 
 `shoot()` → `raycaster.setFromCamera({ x: 0, y: 0 }, camera)` → `intersectObjects(targets)` → 적중 시 제거 + 점수 증가 + `spawnHitEffect`
@@ -85,7 +91,7 @@ animate()
 
 ### 기록 시스템
 
-- `startTimer()`는 첫 포인터 락 시 시작된다.
+- `startTimer()`는 경쟁모드 시작 시 포인터 락과 함께 시작된다.
 - 완료 시 `saveRecord(finalTime)`으로 localStorage와 Firebase Realtime Database에 저장한다.
 - `records-btn` 클릭 시 Firebase `leaderboard`와 localStorage 기록을 병합/중복 제거한 뒤 상위 10개를 표시한다.
 - Firebase 조회 실패 시에도 localStorage 기록만으로 순위를 표시한다.
@@ -112,7 +118,8 @@ ADS 리얼 얼굴-조준경 공식:
 
 | 입력 | 기능 |
 |---|---|
-| 오버레이 클릭 | 게임 시작 / 포인터 락 |
+| 무한모드 버튼 | 무한모드 시작 / 포인터 락 |
+| 경쟁모드 버튼 | 경쟁모드 시작 / 포인터 락 |
 | 좌클릭 | 발사 |
 | 우클릭 홀드 | 조준(ADS) + FOV 45→15 줌 + 스코프 오버레이 표시 |
 | WASD | 이동 |
@@ -126,7 +133,7 @@ ADS 리얼 얼굴-조준경 공식:
 ## HUD DOM 구조
 
 ```
-#overlay              → 게임 시작 전 전체화면 오버레이 (.hidden 클래스로 토글)
+#overlay              → 모드 선택 전체화면 오버레이 (.hidden 클래스로 토글)
 #crosshair            → 화면 중앙 조준점 (+)
 #scope-overlay        → 우클릭 ADS 중 표시되는 SVG 스코프 UI
 #hud
