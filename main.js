@@ -152,12 +152,18 @@ camera.add(muzzleLight);
 
 // Movement
 const clock = new THREE.Clock();
-const keys = { w: false, a: false, s: false, d: false };
+const keys = { w: false, a: false, s: false, d: false, shift: false };
 let verticalVelocity = 0;
 const GROUND_Y = 50;
 const MOVE_SPEED = 80;
+const SPRINT_MULTIPLIER = 1.6;
 const JUMP_SPEED = 120;
 const GRAVITY = 250;
+const SLIDE_DURATION = 0.45;
+const SLIDE_SPEED = 180;
+const SLIDE_CAMERA_DROP = 18;
+let slideTimer = 0;
+let slideDirection = null;
 
 // ADS
 let isAiming = false;
@@ -360,6 +366,17 @@ function shoot() {
   gunRecoil();
 }
 
+function startSlide() {
+  if (!controls.isLocked || slideTimer > 0 || camera.position.y > GROUND_Y + 1) return;
+  if (!keys.w && !keys.a && !keys.s && !keys.d) return;
+
+  slideTimer = SLIDE_DURATION;
+  slideDirection = new THREE.Vector3();
+  camera.getWorldDirection(slideDirection);
+  slideDirection.y = 0;
+  slideDirection.normalize();
+}
+
 // Input events
 document.addEventListener('contextmenu', (e) => e.preventDefault());
 document.addEventListener('mousedown', (e) => {
@@ -385,6 +402,8 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'a' || e.key === 'A') keys.a = true;
   if (e.key === 's' || e.key === 'S') keys.s = true;
   if (e.key === 'd' || e.key === 'D') keys.d = true;
+  if (e.key === 'Shift') keys.shift = true;
+  if (e.key === 'c' || e.key === 'C') startSlide();
   if (e.key === ' ' && controls.isLocked && camera.position.y <= GROUND_Y + 1)
     verticalVelocity = JUMP_SPEED;
   if ((e.key === 'r' || e.key === 'R') && controls.isLocked) { ammo = 10; updateHUD(); }
@@ -395,6 +414,7 @@ document.addEventListener('keyup', (e) => {
   if (e.key === 'a' || e.key === 'A') keys.a = false;
   if (e.key === 's' || e.key === 'S') keys.s = false;
   if (e.key === 'd' || e.key === 'D') keys.d = false;
+  if (e.key === 'Shift') keys.shift = false;
 });
 
 // Load gun model
@@ -459,18 +479,29 @@ function animate() {
 
   if (controls.isLocked) {
     // WASD movement
-    const spd = MOVE_SPEED * delta;
+    const isSprinting = keys.shift && keys.w && slideTimer <= 0;
+    const spd = MOVE_SPEED * (isSprinting ? SPRINT_MULTIPLIER : 1) * delta;
     if (keys.w) controls.moveForward(spd);
     if (keys.s) controls.moveForward(-spd);
     if (keys.d) controls.moveRight(spd);
     if (keys.a) controls.moveRight(-spd);
 
+    const wasSliding = slideTimer > 0;
+    if (wasSliding && slideDirection) {
+      const slideStep = SLIDE_SPEED * (slideTimer / SLIDE_DURATION) * delta;
+      camera.position.addScaledVector(slideDirection, slideStep);
+      slideTimer = Math.max(0, slideTimer - delta);
+    }
+
     // Gravity & jump
     verticalVelocity -= GRAVITY * delta;
     camera.position.y += verticalVelocity * delta;
-    if (camera.position.y <= GROUND_Y) {
-      camera.position.y = GROUND_Y;
+    const targetGroundY = wasSliding ? GROUND_Y - SLIDE_CAMERA_DROP : GROUND_Y;
+    if (camera.position.y <= targetGroundY) {
+      camera.position.y = targetGroundY;
       verticalVelocity = 0;
+    } else if (slideTimer <= 0 && camera.position.y < GROUND_Y) {
+      camera.position.y = Math.min(GROUND_Y, camera.position.y + SLIDE_CAMERA_DROP * 8 * delta);
     }
 
     // AABB collision with walls and structures
