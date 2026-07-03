@@ -416,15 +416,15 @@ function spawnLaserShot(endPoint) {
 
   const outerBeam = new THREE.Mesh(
     new THREE.CylinderGeometry(2.4, 2.4, length, 12, 1, true),
-    new THREE.MeshBasicMaterial({ color: 0x7bdcff, transparent: true, opacity: 0.32, depthWrite: false })
+    new THREE.MeshBasicMaterial({ color: 0xa855f7, transparent: true, opacity: 0.32, depthWrite: false })
   );
   const coreBeam = new THREE.Mesh(
     new THREE.CylinderGeometry(0.55, 0.55, length, 10, 1, true),
-    new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.92, depthWrite: false })
+    new THREE.MeshBasicMaterial({ color: 0xf5d0fe, transparent: true, opacity: 0.95, depthWrite: false })
   );
   const impactGlow = new THREE.Mesh(
     new THREE.SphereGeometry(5.5, 16, 16),
-    new THREE.MeshBasicMaterial({ color: 0x9ee8ff, transparent: true, opacity: 0.8, depthWrite: false })
+    new THREE.MeshBasicMaterial({ color: 0xc084fc, transparent: true, opacity: 0.8, depthWrite: false })
   );
   impactGlow.position.copy(endPoint);
 
