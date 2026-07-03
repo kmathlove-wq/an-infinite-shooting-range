@@ -392,6 +392,47 @@ function spawnHitEffect(point) {
   setTimeout(() => scene.remove(spark), 200);
 }
 
+function spawnLaserShot(endPoint) {
+  const startPoint = camera.localToWorld(new THREE.Vector3(0.08, -0.08, -0.35));
+  const direction = new THREE.Vector3().subVectors(endPoint, startPoint);
+  const length = direction.length();
+  if (length <= 0.01) return;
+
+  const midpoint = new THREE.Vector3().addVectors(startPoint, endPoint).multiplyScalar(0.5);
+  const beamGroup = new THREE.Group();
+  beamGroup.position.copy(midpoint);
+  beamGroup.quaternion.setFromUnitVectors(
+    new THREE.Vector3(0, 1, 0),
+    direction.clone().normalize()
+  );
+
+  const outerBeam = new THREE.Mesh(
+    new THREE.CylinderGeometry(2.4, 2.4, length, 12, 1, true),
+    new THREE.MeshBasicMaterial({ color: 0x7bdcff, transparent: true, opacity: 0.32, depthWrite: false })
+  );
+  const coreBeam = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.55, 0.55, length, 10, 1, true),
+    new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.92, depthWrite: false })
+  );
+  const impactGlow = new THREE.Mesh(
+    new THREE.SphereGeometry(5.5, 16, 16),
+    new THREE.MeshBasicMaterial({ color: 0x9ee8ff, transparent: true, opacity: 0.8, depthWrite: false })
+  );
+  impactGlow.position.copy(endPoint);
+
+  beamGroup.add(outerBeam, coreBeam);
+  scene.add(beamGroup, impactGlow);
+  setTimeout(() => {
+    scene.remove(beamGroup, impactGlow);
+    outerBeam.geometry.dispose();
+    coreBeam.geometry.dispose();
+    impactGlow.geometry.dispose();
+    outerBeam.material.dispose();
+    coreBeam.material.dispose();
+    impactGlow.material.dispose();
+  }, 90);
+}
+
 function gunRecoil() {
   if (!gunWrapper) return;
   muzzleLight.intensity = 3;
@@ -598,6 +639,10 @@ function shoot() {
 
   raycaster.setFromCamera({ x: 0, y: 0 }, camera);
   const hits = raycaster.intersectObjects(targets);
+  const laserEnd = hits.length > 0
+    ? hits[0].point.clone()
+    : raycaster.ray.origin.clone().addScaledVector(raycaster.ray.direction, 900);
+  if (selectedWeaponKey === 'event') spawnLaserShot(laserEnd);
 
   if (hits.length > 0) {
     const hit = hits[0].object;
