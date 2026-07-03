@@ -23,7 +23,7 @@ Pixel-Sniper/
     ├── tinker.obj    # Tinkercad 제작 총 모델 (X: -179~135, Y: 15~117, Z: 1~36)
     ├── obj.mtl       # 기존 색상 재질 정의
     ├── 픽셀스나.mtl  # 기본 픽셀스나 무기 재질
-    └── 이벤트 호라이즌.mtl # 이벤트 호라이즌 무기 재질
+    └── 이벤트 호라이즌.mtl # 이벤트 호라이즌 색상 참고 재질
 ```
 
 ## 실행 방법
@@ -102,7 +102,8 @@ animate()
 ### 총 모델 선택과 ADS
 
 시작 오버레이의 `#weapon-select`에서 `픽셀스나`와 `이벤트 호라이즌` 중 선택한다.
-두 무기는 같은 `models/tinker.obj` 지오메트리를 쓰고, MTL 파일만 바꿔 로드한다.
+`픽셀스나`는 `models/tinker.obj`와 `models/픽셀스나.mtl`을 로드한다.
+`이벤트 호라이즌`은 별도 OBJ가 없으므로 `main.js`의 `createEventHorizonModel()`에서 Three.js 지오메트리로 생성한다.
 선택값은 `localStorage.pixelSniperWeapon`에 저장되며 `loadGunModel()`이 현재 선택 무기를 다시 로드한다.
 
 총구 방향: `gunWrapper.rotation.y = -Math.PI / 2`

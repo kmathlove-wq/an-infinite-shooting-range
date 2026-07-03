@@ -188,11 +188,13 @@ let scopeGroup = null;
 const WEAPONS = {
   pixel: {
     name: '픽셀스나',
-    materialPath: 'models/픽셀스나.mtl'
+    type: 'obj',
+    materialPath: 'models/픽셀스나.mtl',
+    objectPath: 'models/tinker.obj'
   },
   event: {
     name: '이벤트 호라이즌',
-    materialPath: 'models/이벤트 호라이즌.mtl'
+    type: 'procedural'
   }
 };
 let selectedWeaponKey = localStorage.getItem('pixelSniperWeapon') || 'pixel';
@@ -429,6 +431,119 @@ function createScopeGroup() {
   return group;
 }
 
+function createEventHorizonModel() {
+  const group = new THREE.Group();
+  const darkMat = new THREE.MeshStandardMaterial({
+    color: 0x211832,
+    metalness: 0.45,
+    roughness: 0.35
+  });
+  const lightMat = new THREE.MeshStandardMaterial({
+    color: 0xaebcf0,
+    metalness: 0.25,
+    roughness: 0.28
+  });
+  const edgeMat = new THREE.MeshStandardMaterial({
+    color: 0x465b7d,
+    metalness: 0.5,
+    roughness: 0.32
+  });
+  const glowMat = new THREE.MeshStandardMaterial({
+    color: 0x2b183f,
+    emissive: 0x14071f,
+    emissiveIntensity: 0.8,
+    metalness: 0.2,
+    roughness: 0.25
+  });
+
+  const addCylinderX = (x, radius, length, material, segments = 32) => {
+    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, length, segments), material);
+    mesh.rotation.z = Math.PI / 2;
+    mesh.position.x = x;
+    group.add(mesh);
+    return mesh;
+  };
+
+  const addTorusX = (x, radius, tube, material, rotationZ = 0) => {
+    const mesh = new THREE.Mesh(new THREE.TorusGeometry(radius, tube, 16, 48), material);
+    mesh.rotation.y = Math.PI / 2;
+    mesh.rotation.z = rotationZ;
+    mesh.position.x = x;
+    group.add(mesh);
+    return mesh;
+  };
+
+  addCylinderX(-105, 6, 150, darkMat);
+  [-155, -115, -75, -35].forEach((x, i) => {
+    addCylinderX(x, 18 + i * 1.5, 16, lightMat);
+    addCylinderX(x, 19.5 + i * 1.5, 3, edgeMat);
+  });
+
+  const spear = new THREE.Mesh(new THREE.ConeGeometry(4, 44, 24), darkMat);
+  spear.rotation.z = Math.PI / 2;
+  spear.position.x = -196;
+  group.add(spear);
+
+  const core = new THREE.Mesh(new THREE.SphereGeometry(40, 40, 28), glowMat);
+  core.scale.set(1.03, 1, 0.92);
+  core.position.x = 22;
+  group.add(core);
+  addTorusX(22, 41, 3.5, edgeMat);
+
+  const tiltedRing = addTorusX(-2, 48, 7, lightMat, 0.35);
+  tiltedRing.scale.set(1, 1.05, 0.85);
+
+  [
+    { x: 62, y: 28, z: 0, rz: -0.55 },
+    { x: 62, y: -28, z: 0, rz: 0.55 },
+    { x: 82, y: 0, z: 28, rz: Math.PI / 2 }
+  ].forEach(({ x, y, z, rz }) => {
+    const blade = new THREE.Mesh(new THREE.TorusGeometry(42, 7, 12, 48, Math.PI * 0.72), lightMat);
+    blade.rotation.set(0.2, Math.PI / 2, rz);
+    blade.position.set(x, y, z);
+    group.add(blade);
+  });
+
+  addCylinderX(75, 20, 16, lightMat);
+  addTorusX(112, 25, 6, lightMat);
+  addTorusX(126, 26, 5, edgeMat);
+
+  const rearCrystal = new THREE.Mesh(new THREE.OctahedronGeometry(18, 0), lightMat);
+  rearCrystal.rotation.x = Math.PI / 4;
+  rearCrystal.position.set(130, 0, 0);
+  group.add(rearCrystal);
+
+  const topCharm = new THREE.Mesh(new THREE.TorusGeometry(14, 3, 10, 24), lightMat);
+  topCharm.rotation.set(Math.PI / 2, 0, 0);
+  topCharm.position.set(30, 54, 0);
+  group.add(topCharm);
+
+  const topSpike = new THREE.Mesh(new THREE.ConeGeometry(7, 22, 4), lightMat);
+  topSpike.position.set(30, 76, 0);
+  group.add(topSpike);
+
+  const box = new THREE.Box3().setFromObject(group);
+  const center = new THREE.Vector3();
+  box.getCenter(center);
+  group.position.sub(center);
+  return group;
+}
+
+function attachGunObject(object, includeScope) {
+  gunWrapper = new THREE.Group();
+  gunWrapper.add(object);
+
+  if (includeScope) {
+    scopeGroup = createScopeGroup();
+    gunWrapper.add(scopeGroup);
+  }
+
+  gunWrapper.scale.setScalar(HIP.scale);
+  gunWrapper.rotation.y = -Math.PI / 2;
+  gunWrapper.position.set(HIP.x, HIP.y, HIP.z);
+  camera.add(gunWrapper);
+}
+
 function loadGunModel() {
   const loadId = ++gunLoadId;
   const weapon = WEAPONS[selectedWeaponKey];
@@ -439,29 +554,25 @@ function loadGunModel() {
     scopeGroup = null;
   }
 
+  if (weapon.type === 'procedural') {
+    attachGunObject(createEventHorizonModel(), false);
+    return;
+  }
+
   const mtlLoader = new MTLLoader();
   mtlLoader.load(weapon.materialPath, (materials) => {
     if (loadId !== gunLoadId) return;
     materials.preload();
     const objLoader = new OBJLoader();
     objLoader.setMaterials(materials);
-    objLoader.load('models/tinker.obj', (object) => {
+    objLoader.load(weapon.objectPath, (object) => {
       if (loadId !== gunLoadId) return;
       const box = new THREE.Box3().setFromObject(object);
       const center = new THREE.Vector3();
       box.getCenter(center);
       object.position.sub(center);
 
-      gunWrapper = new THREE.Group();
-      gunWrapper.add(object);
-
-      scopeGroup = createScopeGroup();
-      gunWrapper.add(scopeGroup);
-
-      gunWrapper.scale.setScalar(HIP.scale);
-      gunWrapper.rotation.y = -Math.PI / 2;
-      gunWrapper.position.set(HIP.x, HIP.y, HIP.z);
-      camera.add(gunWrapper);
+      attachGunObject(object, true);
     });
   });
 }
