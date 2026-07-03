@@ -392,7 +392,15 @@ function spawnHitEffect(point) {
   setTimeout(() => scene.remove(spark), 200);
 }
 
+function spawnLaserFlash() {
+  const laser = document.createElement('div');
+  laser.className = 'event-laser-flash';
+  document.body.appendChild(laser);
+  setTimeout(() => laser.remove(), 180);
+}
+
 function spawnLaserShot(endPoint) {
+  spawnLaserFlash();
   const startPoint = camera.localToWorld(new THREE.Vector3(0.08, -0.08, -0.35));
   const direction = new THREE.Vector3().subVectors(endPoint, startPoint);
   const length = direction.length();
