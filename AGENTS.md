@@ -165,11 +165,11 @@ GRAVITY    = 250    // 중력 가속도
 
 ## GitHub
 
-저장소: `https://github.com/kmathlove-wq/Pixel-Sniper`
+저장소: `https://github.com/kmathlove-wq/an-infinite-shooting-range`
 브랜치: `main`
 
 코드 변경 후 사용자가 요청하면 커밋 + 푸시한다.
-push 명령: `git push origin main` (remote URL에 인증 포함됨)
+push 명령: `env -u GITHUB_TOKEN -u GH_TOKEN git push origin main`
 
 ## 주의사항
 
