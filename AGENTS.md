@@ -21,7 +21,9 @@ Pixel-Sniper/
 ├── CNAME             # GitHub Pages custom domain
 └── models/
     ├── tinker.obj    # Tinkercad 제작 총 모델 (X: -179~135, Y: 15~117, Z: 1~36)
-    └── obj.mtl       # 색상 재질 정의
+    ├── obj.mtl       # 기존 색상 재질 정의
+    ├── 픽셀스나.mtl  # 기본 픽셀스나 무기 재질
+    └── 이벤트 호라이즌.mtl # 이벤트 호라이즌 무기 재질
 ```
 
 ## 실행 방법
@@ -97,7 +99,11 @@ animate()
 - Firebase 조회 실패 시에도 localStorage 기록만으로 순위를 표시한다.
 - 기존 localStorage의 6초대 테스트 기록은 `pixelSniperRemovedSixSecondRecord` 플래그로 1회만 정리한다.
 
-### 총 모델과 ADS
+### 총 모델 선택과 ADS
+
+시작 오버레이의 `#weapon-select`에서 `픽셀스나`와 `이벤트 호라이즌` 중 선택한다.
+두 무기는 같은 `models/tinker.obj` 지오메트리를 쓰고, MTL 파일만 바꿔 로드한다.
+선택값은 `localStorage.pixelSniperWeapon`에 저장되며 `loadGunModel()`이 현재 선택 무기를 다시 로드한다.
 
 총구 방향: `gunWrapper.rotation.y = -Math.PI / 2`
 - Tinkercad OBJ: 배럴이 -X 방향(X=-179이 총구), 개머리판이 +X(X=135)

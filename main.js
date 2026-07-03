@@ -34,6 +34,7 @@ const controls = new PointerLockControls(camera, document.body);
 const overlay = document.getElementById('overlay');
 const scopeOverlay = document.getElementById('scope-overlay');
 const crosshairEl = document.getElementById('crosshair');
+const weaponButtons = document.querySelectorAll('.weapon-option');
 const infiniteModeBtn = document.getElementById('infinite-mode-btn');
 const competitiveModeBtn = document.getElementById('competitive-mode-btn');
 infiniteModeBtn.addEventListener('click', () => startGame('infinite'));
@@ -183,6 +184,20 @@ let gameComplete = false;
 let currentMode = null;
 let gunWrapper = null;
 let scopeGroup = null;
+
+const WEAPONS = {
+  pixel: {
+    name: '픽셀스나',
+    materialPath: 'models/픽셀스나.mtl'
+  },
+  event: {
+    name: '이벤트 호라이즌',
+    materialPath: 'models/이벤트 호라이즌.mtl'
+  }
+};
+let selectedWeaponKey = localStorage.getItem('pixelSniperWeapon') || 'pixel';
+if (!WEAPONS[selectedWeaponKey]) selectedWeaponKey = 'pixel';
+let gunLoadId = 0;
 
 function updateHUD() {
   document.getElementById('score').textContent = `SCORE: ${score}`;
@@ -381,6 +396,76 @@ function gunRecoil() {
   }, 80);
 }
 
+function setWeapon(key) {
+  if (!WEAPONS[key] || key === selectedWeaponKey) return;
+  selectedWeaponKey = key;
+  localStorage.setItem('pixelSniperWeapon', key);
+  updateWeaponButtons();
+  loadGunModel();
+}
+
+function updateWeaponButtons() {
+  weaponButtons.forEach((button) => {
+    button.classList.toggle('active', button.dataset.weapon === selectedWeaponKey);
+  });
+}
+
+function createScopeGroup() {
+  const scopeMat = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.8, roughness: 0.3 });
+  const scopeTube = new THREE.Mesh(new THREE.CylinderGeometry(5, 5, 150, 16), scopeMat);
+  scopeTube.rotation.z = Math.PI / 2;
+  scopeTube.position.set(47, 55, 0);
+  const capMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.9, roughness: 0.2 });
+  const capGeo = new THREE.CylinderGeometry(5.5, 5.5, 3, 16);
+  const capFront = new THREE.Mesh(capGeo, capMat);
+  capFront.rotation.z = Math.PI / 2;
+  capFront.position.set(-28, 55, 0);
+  const capRear = new THREE.Mesh(capGeo, capMat);
+  capRear.rotation.z = Math.PI / 2;
+  capRear.position.set(122, 55, 0);
+  const group = new THREE.Group();
+  group.add(scopeTube, capFront, capRear);
+  group.visible = false;
+  return group;
+}
+
+function loadGunModel() {
+  const loadId = ++gunLoadId;
+  const weapon = WEAPONS[selectedWeaponKey];
+
+  if (gunWrapper) {
+    camera.remove(gunWrapper);
+    gunWrapper = null;
+    scopeGroup = null;
+  }
+
+  const mtlLoader = new MTLLoader();
+  mtlLoader.load(weapon.materialPath, (materials) => {
+    if (loadId !== gunLoadId) return;
+    materials.preload();
+    const objLoader = new OBJLoader();
+    objLoader.setMaterials(materials);
+    objLoader.load('models/tinker.obj', (object) => {
+      if (loadId !== gunLoadId) return;
+      const box = new THREE.Box3().setFromObject(object);
+      const center = new THREE.Vector3();
+      box.getCenter(center);
+      object.position.sub(center);
+
+      gunWrapper = new THREE.Group();
+      gunWrapper.add(object);
+
+      scopeGroup = createScopeGroup();
+      gunWrapper.add(scopeGroup);
+
+      gunWrapper.scale.setScalar(HIP.scale);
+      gunWrapper.rotation.y = -Math.PI / 2;
+      gunWrapper.position.set(HIP.x, HIP.y, HIP.z);
+      camera.add(gunWrapper);
+    });
+  });
+}
+
 const raycaster = new THREE.Raycaster();
 
 function shoot() {
@@ -461,45 +546,14 @@ document.addEventListener('keyup', (e) => {
   if (e.key === 'Shift') keys.shift = false;
 });
 
-// Load gun model
-const mtlLoader = new MTLLoader();
-mtlLoader.load('models/obj.mtl', (materials) => {
-  materials.preload();
-  const objLoader = new OBJLoader();
-  objLoader.setMaterials(materials);
-  objLoader.load('models/tinker.obj', (object) => {
-    const box = new THREE.Box3().setFromObject(object);
-    const center = new THREE.Vector3();
-    box.getCenter(center);
-    object.position.sub(center);
-
-    gunWrapper = new THREE.Group();
-    gunWrapper.add(object);
-
-    // 조준경 튜브
-    const scopeMat = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.8, roughness: 0.3 });
-    const scopeTube = new THREE.Mesh(new THREE.CylinderGeometry(5, 5, 150, 16), scopeMat);
-    scopeTube.rotation.z = Math.PI / 2;
-    scopeTube.position.set(47, 55, 0);
-    const capMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.9, roughness: 0.2 });
-    const capGeo = new THREE.CylinderGeometry(5.5, 5.5, 3, 16);
-    const capFront = new THREE.Mesh(capGeo, capMat);
-    capFront.rotation.z = Math.PI / 2;
-    capFront.position.set(-28, 55, 0);
-    const capRear = new THREE.Mesh(capGeo, capMat);
-    capRear.rotation.z = Math.PI / 2;
-    capRear.position.set(122, 55, 0);
-    scopeGroup = new THREE.Group();
-    scopeGroup.add(scopeTube, capFront, capRear);
-    scopeGroup.visible = false;
-    gunWrapper.add(scopeGroup);
-
-    gunWrapper.scale.setScalar(HIP.scale);
-    gunWrapper.rotation.y = -Math.PI / 2;
-    gunWrapper.position.set(HIP.x, HIP.y, HIP.z);
-    camera.add(gunWrapper);
+weaponButtons.forEach((button) => {
+  button.addEventListener('click', (e) => {
+    e.stopPropagation();
+    setWeapon(button.dataset.weapon);
   });
 });
+updateWeaponButtons();
+loadGunModel();
 
 document.getElementById('records-btn').addEventListener('click', openRecordsModal);
 document.getElementById('modal-close-btn').addEventListener('click', closeRecordsModal);
