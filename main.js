@@ -174,7 +174,7 @@ let isAiming = false;
 const HIP = { x: 0.2,  y: -0.18, z: -0.45, fov: 45,   scale: 0.002  };
 const ADS = { x: 0,      y: -0.11, z: -0.394, fov: 15, scale: 0.002  };
 const EVENT_HIP = { x: 0.24, y: -0.24, z: -0.56, fov: 45, scale: 0.0022 };
-const EVENT_ADS = { x: 0.18, y: -0.30, z: -0.68, fov: 15, scale: 0.0017 };
+const EVENT_ADS = { x: 0, y: -0.11, z: -0.394, fov: 15, scale: 0.0022 };
 
 // Game state
 let score = 0;
