@@ -173,6 +173,8 @@ let slideDirection = null;
 let isAiming = false;
 const HIP = { x: 0.2,  y: -0.18, z: -0.45, fov: 45,   scale: 0.002  };
 const ADS = { x: 0,      y: -0.11, z: -0.394, fov: 15, scale: 0.002  };
+const EVENT_HIP = { x: 0.26, y: -0.28, z: -0.62, fov: 45, scale: 0.00115 };
+const EVENT_ADS = { x: 0.22, y: -0.32, z: -0.68, fov: 15, scale: 0.00095 };
 
 // Game state
 let score = 0;
@@ -435,25 +437,25 @@ function createEventHorizonModel() {
   const group = new THREE.Group();
   const darkMat = new THREE.MeshStandardMaterial({
     color: 0x211832,
-    metalness: 0.45,
-    roughness: 0.35
+    metalness: 0.5,
+    roughness: 0.34
   });
   const lightMat = new THREE.MeshStandardMaterial({
     color: 0xaebcf0,
-    metalness: 0.25,
-    roughness: 0.28
+    metalness: 0.18,
+    roughness: 0.34
   });
   const edgeMat = new THREE.MeshStandardMaterial({
-    color: 0x465b7d,
-    metalness: 0.5,
+    color: 0x3f5678,
+    metalness: 0.55,
     roughness: 0.32
   });
   const glowMat = new THREE.MeshStandardMaterial({
-    color: 0x2b183f,
-    emissive: 0x14071f,
-    emissiveIntensity: 0.8,
+    color: 0x241633,
+    emissive: 0x12061d,
+    emissiveIntensity: 0.65,
     metalness: 0.2,
-    roughness: 0.25
+    roughness: 0.28
   });
 
   const addCylinderX = (x, radius, length, material, segments = 32) => {
@@ -465,7 +467,7 @@ function createEventHorizonModel() {
   };
 
   const addTorusX = (x, radius, tube, material, rotationZ = 0) => {
-    const mesh = new THREE.Mesh(new THREE.TorusGeometry(radius, tube, 16, 48), material);
+    const mesh = new THREE.Mesh(new THREE.TorusGeometry(radius, tube, 14, 44), material);
     mesh.rotation.y = Math.PI / 2;
     mesh.rotation.z = rotationZ;
     mesh.position.x = x;
@@ -473,53 +475,54 @@ function createEventHorizonModel() {
     return mesh;
   };
 
-  addCylinderX(-105, 6, 150, darkMat);
-  [-155, -115, -75, -35].forEach((x, i) => {
-    addCylinderX(x, 18 + i * 1.5, 16, lightMat);
-    addCylinderX(x, 19.5 + i * 1.5, 3, edgeMat);
+  addCylinderX(-165, 5.5, 210, darkMat);
+  [-250, -190, -130, -72].forEach((x, i) => {
+    const radius = 16 + i * 1.6;
+    addCylinderX(x, radius, 18, lightMat);
+    addCylinderX(x, radius + 1.5, 3, edgeMat);
   });
 
-  const spear = new THREE.Mesh(new THREE.ConeGeometry(4, 44, 24), darkMat);
+  const spear = new THREE.Mesh(new THREE.ConeGeometry(4, 48, 24), darkMat);
   spear.rotation.z = Math.PI / 2;
-  spear.position.x = -196;
+  spear.position.x = -288;
   group.add(spear);
 
-  const core = new THREE.Mesh(new THREE.SphereGeometry(40, 40, 28), glowMat);
-  core.scale.set(1.03, 1, 0.92);
-  core.position.x = 22;
+  const core = new THREE.Mesh(new THREE.SphereGeometry(34, 40, 28), glowMat);
+  core.scale.set(1.05, 1, 0.92);
+  core.position.x = 18;
   group.add(core);
-  addTorusX(22, 41, 3.5, edgeMat);
+  addTorusX(18, 35, 3.2, edgeMat);
 
-  const tiltedRing = addTorusX(-2, 48, 7, lightMat, 0.35);
-  tiltedRing.scale.set(1, 1.05, 0.85);
+  const tiltedRing = addTorusX(-8, 41, 5.5, lightMat, 0.35);
+  tiltedRing.scale.set(1, 1.02, 0.82);
 
   [
-    { x: 62, y: 28, z: 0, rz: -0.55 },
-    { x: 62, y: -28, z: 0, rz: 0.55 },
-    { x: 82, y: 0, z: 28, rz: Math.PI / 2 }
+    { x: 62, y: 25, z: 0, rz: -0.52 },
+    { x: 62, y: -25, z: 0, rz: 0.52 },
+    { x: 82, y: 0, z: 23, rz: Math.PI / 2 }
   ].forEach(({ x, y, z, rz }) => {
-    const blade = new THREE.Mesh(new THREE.TorusGeometry(42, 7, 12, 48, Math.PI * 0.72), lightMat);
-    blade.rotation.set(0.2, Math.PI / 2, rz);
+    const blade = new THREE.Mesh(new THREE.TorusGeometry(35, 5.2, 12, 44, Math.PI * 0.66), lightMat);
+    blade.rotation.set(0.18, Math.PI / 2, rz);
     blade.position.set(x, y, z);
     group.add(blade);
   });
 
-  addCylinderX(75, 20, 16, lightMat);
-  addTorusX(112, 25, 6, lightMat);
-  addTorusX(126, 26, 5, edgeMat);
+  addCylinderX(80, 17, 15, lightMat);
+  addTorusX(128, 23, 5, lightMat);
+  addTorusX(144, 24, 4.5, edgeMat);
 
-  const rearCrystal = new THREE.Mesh(new THREE.OctahedronGeometry(18, 0), lightMat);
+  const rearCrystal = new THREE.Mesh(new THREE.OctahedronGeometry(15, 0), lightMat);
   rearCrystal.rotation.x = Math.PI / 4;
-  rearCrystal.position.set(130, 0, 0);
+  rearCrystal.position.set(150, 0, 0);
   group.add(rearCrystal);
 
-  const topCharm = new THREE.Mesh(new THREE.TorusGeometry(14, 3, 10, 24), lightMat);
+  const topCharm = new THREE.Mesh(new THREE.TorusGeometry(11, 2.5, 10, 24), lightMat);
   topCharm.rotation.set(Math.PI / 2, 0, 0);
-  topCharm.position.set(30, 54, 0);
+  topCharm.position.set(24, 44, 0);
   group.add(topCharm);
 
-  const topSpike = new THREE.Mesh(new THREE.ConeGeometry(7, 22, 4), lightMat);
-  topSpike.position.set(30, 76, 0);
+  const topSpike = new THREE.Mesh(new THREE.ConeGeometry(5, 18, 4), lightMat);
+  topSpike.position.set(24, 60, 0);
   group.add(topSpike);
 
   const box = new THREE.Box3().setFromObject(group);
@@ -529,7 +532,14 @@ function createEventHorizonModel() {
   return group;
 }
 
+function getWeaponPose() {
+  return selectedWeaponKey === 'event'
+    ? { hip: EVENT_HIP, ads: EVENT_ADS }
+    : { hip: HIP, ads: ADS };
+}
+
 function attachGunObject(object, includeScope) {
+  const pose = getWeaponPose().hip;
   gunWrapper = new THREE.Group();
   gunWrapper.add(object);
 
@@ -538,9 +548,9 @@ function attachGunObject(object, includeScope) {
     gunWrapper.add(scopeGroup);
   }
 
-  gunWrapper.scale.setScalar(HIP.scale);
+  gunWrapper.scale.setScalar(pose.scale);
   gunWrapper.rotation.y = -Math.PI / 2;
-  gunWrapper.position.set(HIP.x, HIP.y, HIP.z);
+  gunWrapper.position.set(pose.x, pose.y, pose.z);
   camera.add(gunWrapper);
 }
 
@@ -736,7 +746,8 @@ function animate() {
 
   // ADS lerp
   const t = Math.min(10 * delta, 1);
-  const aim = isAiming ? ADS : HIP;
+  const pose = getWeaponPose();
+  const aim = isAiming ? pose.ads : pose.hip;
 
   if (gunWrapper) {
     gunWrapper.position.x = THREE.MathUtils.lerp(gunWrapper.position.x, aim.x, t);
