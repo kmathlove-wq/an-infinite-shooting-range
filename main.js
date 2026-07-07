@@ -175,8 +175,8 @@ const HIP = { x: 0.2,  y: -0.18, z: -0.45, fov: 45,   scale: 0.002  };
 const ADS = { x: 0,      y: -0.11, z: -0.394, fov: 15, scale: 0.002  };
 const EVENT_HIP = { x: 0.24, y: -0.24, z: -0.56, fov: 45, scale: 0.0022 };
 const EVENT_ADS = { x: 0, y: -0.11, z: -0.394, fov: 15, scale: 0.0022 };
-const KEYLISONG_HIP = { x: 0.28, y: -0.36, z: -0.56, fov: 45, scale: 0.00235 };
-const KEYLISONG_ADS = { x: 0.28, y: -0.36, z: -0.56, fov: 45, scale: 0.00235 };
+const KEYLISONG_HIP = { x: 0.30, y: -0.45, z: -0.52, fov: 45, scale: 0.00215 };
+const KEYLISONG_ADS = { x: 0.30, y: -0.45, z: -0.52, fov: 45, scale: 0.00215 };
 const KEYLISONG_ATTACK_DURATION = 560;
 const KEYLISONG_ATTACK_RANGE = 300;
 
@@ -484,38 +484,41 @@ function updateWeaponButtons() {
 
 function createKeylisongHandGroup() {
   const group = new THREE.Group();
-  const skinMat = new THREE.MeshStandardMaterial({ color: 0xf0c7a3, roughness: 0.72 });
-  const sleeveMat = new THREE.MeshStandardMaterial({ color: 0xf3f4f6, roughness: 0.62 });
-  const cuffMat = new THREE.MeshStandardMaterial({ color: 0xd8dde8, roughness: 0.68 });
+  const skinMat = new THREE.MeshStandardMaterial({ color: 0xf0c09a, roughness: 0.76 });
+  const sleeveMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.58 });
+  const cuffMat = new THREE.MeshStandardMaterial({ color: 0xd9dee8, roughness: 0.65 });
 
-  const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(17, 20, 88, 14), sleeveMat);
-  sleeve.rotation.z = Math.PI / 2;
-  sleeve.position.set(54, -93, 2);
-  sleeve.scale.set(1, 0.72, 1);
+  const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(28, 36, 120, 18), sleeveMat);
+  sleeve.rotation.set(0.15, 0.05, Math.PI / 2.15);
+  sleeve.position.set(58, -118, 4);
+  sleeve.scale.set(1, 0.82, 1);
   group.add(sleeve);
 
-  const cuff = new THREE.Mesh(new THREE.CylinderGeometry(20, 20, 10, 14), cuffMat);
-  cuff.rotation.z = Math.PI / 2;
-  cuff.position.set(15, -72, 2);
-  cuff.scale.set(1, 0.72, 1);
+  const cuff = new THREE.Mesh(new THREE.CylinderGeometry(30, 30, 14, 18), cuffMat);
+  cuff.rotation.set(0.15, 0.05, Math.PI / 2.15);
+  cuff.position.set(6, -82, 4);
+  cuff.scale.set(1, 0.82, 1);
   group.add(cuff);
 
-  const palm = new THREE.Mesh(new THREE.SphereGeometry(20, 18, 12), skinMat);
-  palm.position.set(-10, -48, 2);
-  palm.scale.set(1.05, 0.72, 0.78);
+  const palm = new THREE.Mesh(new THREE.SphereGeometry(24, 20, 14), skinMat);
+  palm.position.set(-18, -55, 5);
+  palm.scale.set(1.15, 0.62, 0.78);
   group.add(palm);
 
-  const thumb = new THREE.Mesh(new THREE.CylinderGeometry(5.5, 5.5, 32, 10), skinMat);
-  thumb.rotation.set(0.9, 0.2, 0.95);
-  thumb.position.set(2, -34, 15);
+  const grip = new THREE.Mesh(new THREE.CylinderGeometry(6, 6.5, 56, 12), skinMat);
+  grip.rotation.set(Math.PI / 2, 0.18, 0.05);
+  grip.position.set(-23, -34, 5);
+  group.add(grip);
+
+  const thumb = new THREE.Mesh(new THREE.CylinderGeometry(6, 6, 42, 12), skinMat);
+  thumb.rotation.set(0.72, -0.2, 1.04);
+  thumb.position.set(-2, -42, 18);
   group.add(thumb);
 
-  [-17, -7, 3].forEach((x, i) => {
-    const finger = new THREE.Mesh(new THREE.CylinderGeometry(4.4, 4.8, 30 - i * 2, 10), skinMat);
-    finger.rotation.set(Math.PI / 2, 0.1, 0.08);
-    finger.position.set(x, -32 + i * 2, 6 - i * 1.8);
-    group.add(finger);
-  });
+  const indexFinger = new THREE.Mesh(new THREE.CylinderGeometry(4.8, 5.2, 46, 10), skinMat);
+  indexFinger.rotation.set(1.2, 0.22, -0.58);
+  indexFinger.position.set(-30, -38, -9);
+  group.add(indexFinger);
 
   return group;
 }
@@ -693,8 +696,8 @@ function loadGunModel() {
       object.position.sub(center);
       if (selectedWeaponKey === 'keylisong') {
         object.rotation.z = -Math.PI / 2;
-        object.position.x += 18;
-        object.position.y -= 18;
+        object.position.x += 10;
+        object.position.y -= 28;
       }
 
       attachGunObject(object, selectedWeaponKey === 'pixel');
@@ -902,12 +905,12 @@ function animate() {
       ? Math.sin(((attackProgress - 0.28) / 0.50) * Math.PI)
       : 0;
     const settle = attacking ? Math.sin(Math.PI * Math.min(attackProgress, 1)) : 0;
-    const bladeLift = selectedWeaponKey === 'keylisong' ? 0.03 : 0;
+    const bladeLift = selectedWeaponKey === 'keylisong' ? 0 : 0;
     const bladeAngle = selectedWeaponKey === 'keylisong' ? -0.68 : 0;
 
     gunWrapper.position.x = THREE.MathUtils.lerp(gunWrapper.position.x, aim.x + keylisongAttackSide * 0.08 * flip, t);
-    gunWrapper.position.y = THREE.MathUtils.lerp(gunWrapper.position.y, aim.y + bladeLift + 0.04 * prep - 0.03 * thrust, t);
-    gunWrapper.position.z = THREE.MathUtils.lerp(gunWrapper.position.z, aim.z - 0.08 - 0.22 * thrust + 0.04 * flip, t);
+    gunWrapper.position.y = THREE.MathUtils.lerp(gunWrapper.position.y, aim.y + bladeLift + 0.03 * prep - 0.025 * thrust, t);
+    gunWrapper.position.z = THREE.MathUtils.lerp(gunWrapper.position.z, aim.z - 0.04 - 0.20 * thrust + 0.035 * flip, t);
     gunWrapper.rotation.x = selectedWeaponKey === 'keylisong' ? bladeAngle - 0.55 * thrust + 0.18 * flip : 0;
     gunWrapper.rotation.y = selectedWeaponKey === 'event' ? Math.PI / 2 : -Math.PI / 2 + (selectedWeaponKey === 'keylisong' ? keylisongAttackSide * (0.28 * prep + 0.42 * flip) : 0);
     gunWrapper.rotation.z = selectedWeaponKey === 'keylisong' ? keylisongAttackSide * (0.32 + prep * Math.PI * 0.85 + flip * Math.PI * 1.25 + settle * 0.2) : 0;
