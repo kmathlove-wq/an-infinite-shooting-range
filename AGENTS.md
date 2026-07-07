@@ -90,7 +90,7 @@ animate()
 
 `shoot()` → `raycaster.setFromCamera({ x: 0, y: 0 }, camera)` → `intersectObjects(targets)` → 적중 시 제거 + 점수 증가 + `spawnHitEffect`
 
-- 탄약은 기본 10발, `R` 키로 10발 복구
+- 총기는 탄약 10발을 쓰고 `R`로 복구한다. 키리송은 탄약 없이 클릭 시 찌르기/회전 근접 공격을 한다.
 - 모든 표적 제거 시 `stopTimer()` 호출
 - `gunRecoil()`은 `gunWrapper.position.z`에 짧은 반동 오프셋을 준다
 

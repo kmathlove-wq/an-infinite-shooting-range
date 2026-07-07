@@ -177,6 +177,8 @@ const EVENT_HIP = { x: 0.24, y: -0.24, z: -0.56, fov: 45, scale: 0.0022 };
 const EVENT_ADS = { x: 0, y: -0.11, z: -0.394, fov: 15, scale: 0.0022 };
 const KEYLISONG_HIP = { x: 0.24, y: -0.22, z: -0.54, fov: 45, scale: 0.0026 };
 const KEYLISONG_ADS = { x: 0, y: -0.11, z: -0.394, fov: 15, scale: 0.0026 };
+const KEYLISONG_ATTACK_DURATION = 420;
+const KEYLISONG_ATTACK_RANGE = 260;
 
 // Game state
 let score = 0;
@@ -188,6 +190,7 @@ let gameComplete = false;
 let currentMode = null;
 let gunWrapper = null;
 let scopeGroup = null;
+let keylisongAttackStart = 0;
 
 const WEAPONS = {
   pixel: {
@@ -649,8 +652,39 @@ function loadGunModel() {
 
 const raycaster = new THREE.Raycaster();
 
+function removeTarget(hit) {
+  const target = hit.object;
+  scene.remove(target);
+  targets.splice(targets.indexOf(target), 1);
+  score++;
+  updateHUD();
+  spawnHitEffect(hit.point);
+  if (targets.length === 0) {
+    if (currentMode === 'infinite') {
+      spawnTargets();
+    } else {
+      stopTimer();
+    }
+  }
+}
+
+function swingKeylisong() {
+  if (!controls.isLocked) return;
+  keylisongAttackStart = performance.now();
+  raycaster.setFromCamera({ x: 0, y: 0 }, camera);
+  const hits = raycaster.intersectObjects(targets);
+  if (hits.length > 0 && hits[0].distance <= KEYLISONG_ATTACK_RANGE) {
+    removeTarget(hits[0]);
+  }
+}
+
 function shoot() {
-  if (!controls.isLocked || ammo <= 0) return;
+  if (!controls.isLocked) return;
+  if (selectedWeaponKey === 'keylisong') {
+    swingKeylisong();
+    return;
+  }
+  if (ammo <= 0) return;
   ammo--;
   updateHUD();
 
@@ -661,21 +695,7 @@ function shoot() {
     : raycaster.ray.origin.clone().addScaledVector(raycaster.ray.direction, 900);
   if (selectedWeaponKey === 'event') spawnLaserShot(laserEnd);
 
-  if (hits.length > 0) {
-    const hit = hits[0].object;
-    scene.remove(hit);
-    targets.splice(targets.indexOf(hit), 1);
-    score++;
-    updateHUD();
-    spawnHitEffect(hits[0].point);
-    if (targets.length === 0) {
-      if (currentMode === 'infinite') {
-        spawnTargets();
-      } else {
-        stopTimer();
-      }
-    }
-  }
+  if (hits.length > 0) removeTarget(hits[0]);
 
   gunRecoil();
 }
@@ -814,9 +834,20 @@ function animate() {
   const aim = isAiming ? pose.ads : pose.hip;
 
   if (gunWrapper) {
-    gunWrapper.position.x = THREE.MathUtils.lerp(gunWrapper.position.x, aim.x, t);
-    gunWrapper.position.y = THREE.MathUtils.lerp(gunWrapper.position.y, aim.y, t);
-    gunWrapper.position.z = THREE.MathUtils.lerp(gunWrapper.position.z, aim.z, t);
+    const elapsedAttack = performance.now() - keylisongAttackStart;
+    const attackProgress = selectedWeaponKey === 'keylisong'
+      ? Math.min(elapsedAttack / KEYLISONG_ATTACK_DURATION, 1)
+      : 1;
+    const attacking = selectedWeaponKey === 'keylisong' && attackProgress < 1;
+    const stab = attacking ? Math.sin(Math.PI * attackProgress) : 0;
+    const spin = attacking ? attackProgress * Math.PI * 2 : 0;
+
+    gunWrapper.position.x = THREE.MathUtils.lerp(gunWrapper.position.x, aim.x - 0.05 * stab, t);
+    gunWrapper.position.y = THREE.MathUtils.lerp(gunWrapper.position.y, aim.y + 0.04 * stab, t);
+    gunWrapper.position.z = THREE.MathUtils.lerp(gunWrapper.position.z, aim.z - 0.22 * stab, t);
+    gunWrapper.rotation.x = selectedWeaponKey === 'keylisong' ? -0.45 * stab : 0;
+    gunWrapper.rotation.y = selectedWeaponKey === 'event' ? Math.PI / 2 : -Math.PI / 2;
+    gunWrapper.rotation.z = selectedWeaponKey === 'keylisong' ? spin : 0;
     gunWrapper.scale.setScalar(THREE.MathUtils.lerp(gunWrapper.scale.x, aim.scale, t));
   }
 
