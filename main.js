@@ -177,8 +177,8 @@ const EVENT_HIP = { x: 0.24, y: -0.24, z: -0.56, fov: 45, scale: 0.0022 };
 const EVENT_ADS = { x: 0, y: -0.11, z: -0.394, fov: 15, scale: 0.0022 };
 const KEYLISONG_HIP = { x: 0.24, y: -0.22, z: -0.54, fov: 45, scale: 0.0026 };
 const KEYLISONG_ADS = { x: 0, y: -0.11, z: -0.394, fov: 15, scale: 0.0026 };
-const KEYLISONG_ATTACK_DURATION = 420;
-const KEYLISONG_ATTACK_RANGE = 260;
+const KEYLISONG_ATTACK_DURATION = 560;
+const KEYLISONG_ATTACK_RANGE = 300;
 
 // Game state
 let score = 0;
@@ -190,7 +190,8 @@ let gameComplete = false;
 let currentMode = null;
 let gunWrapper = null;
 let scopeGroup = null;
-let keylisongAttackStart = 0;
+let keylisongAttackStart = -Infinity;
+let keylisongAttackSide = 1;
 
 const WEAPONS = {
   pixel: {
@@ -670,7 +671,10 @@ function removeTarget(hit) {
 
 function swingKeylisong() {
   if (!controls.isLocked) return;
-  keylisongAttackStart = performance.now();
+  const now = performance.now();
+  if (now - keylisongAttackStart < KEYLISONG_ATTACK_DURATION * 0.45) return;
+  keylisongAttackStart = now;
+  keylisongAttackSide *= -1;
   raycaster.setFromCamera({ x: 0, y: 0 }, camera);
   const hits = raycaster.intersectObjects(targets);
   if (hits.length > 0 && hits[0].distance <= KEYLISONG_ATTACK_RANGE) {
@@ -839,15 +843,22 @@ function animate() {
       ? Math.min(elapsedAttack / KEYLISONG_ATTACK_DURATION, 1)
       : 1;
     const attacking = selectedWeaponKey === 'keylisong' && attackProgress < 1;
-    const stab = attacking ? Math.sin(Math.PI * attackProgress) : 0;
-    const spin = attacking ? attackProgress * Math.PI * 2 : 0;
+    const prep = attacking ? Math.min(attackProgress / 0.22, 1) : 0;
+    const thrust = attacking && attackProgress > 0.12 && attackProgress < 0.58
+      ? Math.sin(((attackProgress - 0.12) / 0.46) * Math.PI)
+      : 0;
+    const slash = attacking && attackProgress > 0.32 && attackProgress < 0.86
+      ? Math.sin(((attackProgress - 0.32) / 0.54) * Math.PI)
+      : 0;
+    const returnEase = attacking ? 1 - Math.pow(1 - attackProgress, 2) : 1;
+    const twist = attacking ? (prep * 0.75 + slash * 1.35 + returnEase * 0.2) * keylisongAttackSide : 0;
 
-    gunWrapper.position.x = THREE.MathUtils.lerp(gunWrapper.position.x, aim.x - 0.05 * stab, t);
-    gunWrapper.position.y = THREE.MathUtils.lerp(gunWrapper.position.y, aim.y + 0.04 * stab, t);
-    gunWrapper.position.z = THREE.MathUtils.lerp(gunWrapper.position.z, aim.z - 0.22 * stab, t);
-    gunWrapper.rotation.x = selectedWeaponKey === 'keylisong' ? -0.45 * stab : 0;
-    gunWrapper.rotation.y = selectedWeaponKey === 'event' ? Math.PI / 2 : -Math.PI / 2;
-    gunWrapper.rotation.z = selectedWeaponKey === 'keylisong' ? spin : 0;
+    gunWrapper.position.x = THREE.MathUtils.lerp(gunWrapper.position.x, aim.x + keylisongAttackSide * 0.12 * slash - 0.04 * thrust, t);
+    gunWrapper.position.y = THREE.MathUtils.lerp(gunWrapper.position.y, aim.y + 0.08 * prep - 0.06 * thrust, t);
+    gunWrapper.position.z = THREE.MathUtils.lerp(gunWrapper.position.z, aim.z - 0.36 * thrust + 0.08 * slash, t);
+    gunWrapper.rotation.x = selectedWeaponKey === 'keylisong' ? -0.75 * thrust + 0.25 * slash : 0;
+    gunWrapper.rotation.y = selectedWeaponKey === 'event' ? Math.PI / 2 : -Math.PI / 2 + (selectedWeaponKey === 'keylisong' ? 0.55 * twist : 0);
+    gunWrapper.rotation.z = selectedWeaponKey === 'keylisong' ? keylisongAttackSide * (prep * Math.PI * 1.15 + slash * Math.PI * 1.55) : 0;
     gunWrapper.scale.setScalar(THREE.MathUtils.lerp(gunWrapper.scale.x, aim.scale, t));
   }
 
