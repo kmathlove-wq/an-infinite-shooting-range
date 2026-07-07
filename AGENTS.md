@@ -24,7 +24,9 @@ Pixel-Sniper/
     ├── obj.mtl       # 기존 색상 재질 정의
     ├── 픽셀스나.mtl  # 기본 픽셀스나 무기 재질
     ├── event-horizon.obj # 이벤트 호라이즌 실제 모델
-    └── event-horizon.mtl # 이벤트 호라이즌 재질
+    ├── event-horizon.mtl # 이벤트 호라이즌 재질
+    ├── 키리송.obj   # 키리송 실제 모델
+    └── 키리송.mtl   # 키리송 금색 재질
 ```
 
 ## 실행 방법
@@ -102,9 +104,9 @@ animate()
 
 ### 총 모델 선택과 ADS
 
-시작 오버레이의 `#weapon-select`에서 `픽셀스나`와 `이벤트 호라이즌` 중 선택한다.
+시작 오버레이의 `#weapon-select`에서 `픽셀스나`, `이벤트 호라이즌`, `키리송` 중 선택한다.
 `픽셀스나`는 `models/tinker.obj`와 `models/픽셀스나.mtl`을 로드한다.
-`이벤트 호라이즌`은 `models/event-horizon.obj`와 `models/event-horizon.mtl`을 로드한다.
+`이벤트 호라이즌`은 `models/event-horizon.obj`와 `models/event-horizon.mtl`, `키리송`은 `models/키리송.obj`와 `models/키리송.mtl`을 로드한다.
 선택값은 `localStorage.pixelSniperWeapon`에 저장되며 `loadGunModel()`이 현재 선택 무기를 다시 로드한다.
 
 총구 방향: `gunWrapper.rotation.y = -Math.PI / 2`

@@ -175,6 +175,8 @@ const HIP = { x: 0.2,  y: -0.18, z: -0.45, fov: 45,   scale: 0.002  };
 const ADS = { x: 0,      y: -0.11, z: -0.394, fov: 15, scale: 0.002  };
 const EVENT_HIP = { x: 0.24, y: -0.24, z: -0.56, fov: 45, scale: 0.0022 };
 const EVENT_ADS = { x: 0, y: -0.11, z: -0.394, fov: 15, scale: 0.0022 };
+const KEYLISONG_HIP = { x: 0.24, y: -0.22, z: -0.54, fov: 45, scale: 0.0026 };
+const KEYLISONG_ADS = { x: 0, y: -0.11, z: -0.394, fov: 15, scale: 0.0026 };
 
 // Game state
 let score = 0;
@@ -199,6 +201,12 @@ const WEAPONS = {
     type: 'obj',
     materialPath: 'models/event-horizon.mtl',
     objectPath: 'models/event-horizon.obj'
+  },
+  keylisong: {
+    name: '키리송',
+    type: 'obj',
+    materialPath: 'models/키리송.mtl',
+    objectPath: 'models/키리송.obj'
   }
 };
 let selectedWeaponKey = localStorage.getItem('pixelSniperWeapon') || 'pixel';
@@ -584,9 +592,9 @@ function createEventHorizonModel() {
 }
 
 function getWeaponPose() {
-  return selectedWeaponKey === 'event'
-    ? { hip: EVENT_HIP, ads: EVENT_ADS }
-    : { hip: HIP, ads: ADS };
+  if (selectedWeaponKey === 'event') return { hip: EVENT_HIP, ads: EVENT_ADS };
+  if (selectedWeaponKey === 'keylisong') return { hip: KEYLISONG_HIP, ads: KEYLISONG_ADS };
+  return { hip: HIP, ads: ADS };
 }
 
 function attachGunObject(object, includeScope) {
@@ -632,6 +640,7 @@ function loadGunModel() {
       const center = new THREE.Vector3();
       box.getCenter(center);
       object.position.sub(center);
+      if (selectedWeaponKey === 'keylisong') object.rotation.z = Math.PI / 2;
 
       attachGunObject(object, selectedWeaponKey === 'pixel');
     });
