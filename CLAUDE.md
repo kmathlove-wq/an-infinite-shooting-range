@@ -71,6 +71,26 @@ animate()
 ADS 리얼 얼굴-조준경 공식: capRear y_cam = gunWrapper.y + 55×0.002 = 0 → gunWrapper.y = -0.11
 capRear z_cam = gunWrapper.z + 122×0.002 = -0.15 → gunWrapper.z = -0.394
 
+### 근접무기 공통 (키리송, 카타나)
+
+`MELEE_WEAPONS = new Set(['keylisong','katana'])`로 근접무기를 묶어서 판정/공격모션/조준 비활성화
+로직을 공유한다. 새 근접무기를 추가하면 이 Set에 키만 추가하고, `KATANA_HIP`처럼 그 무기 전용
+포즈 상수를 만들면 된다.
+
+**중요 — HIP/ADS의 y값이 화면 밖으로 나가면 무기가 통째로 안 보임.** 카메라 FOV=45, 거리
+z=-0.56 기준으로 y가 -0.45 같이 너무 작으면(카메라 시야 아래로) 칼 전체가 화면 밑으로 벗어나
+완전히 안 보이는 버그가 있었음(카타나 만들다 발견, 키리송도 같은 문제였음 → 둘 다 y를 0.05로
+수정). 새 무기 포즈를 잡을 때는 브라우저에서 실제로 보이는지 꼭 확인할 것.
+
+### 근접무기(키리송) 공격 모션
+
+`animate()` 안에서 `attackProgress`(0~1) 구간을 3단계로 나눠 `swingAngle`을 부드럽게 이어 계산한다
+(준비 0~`KEYLISONG_WINDUP_END` → 휘두르기 ~`KEYLISONG_SLASH_END` → 회수 ~1).
+과거엔 prep/thrust/flip/settle 네 값을 rotation.z에 그냥 더해서 최대 400도 이상 돌고 공격 끝에
+각도가 순간적으로 뚝 끊기는 문제가 있었음 → 하나의 연속 곡선(`THREE.MathUtils.smoothstep` +
+`lerp`)으로 교체, 최대 회전폭을 약 126도로 제한. 비슷한 모션 버그가 또 생기면 이 방식(구간별
+smoothstep 곡선)을 우선 검토.
+
 ## 조작키
 
 | 키 | 기능 |

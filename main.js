@@ -175,10 +175,17 @@ const HIP = { x: 0.2,  y: -0.18, z: -0.45, fov: 45,   scale: 0.002  };
 const ADS = { x: 0,      y: -0.11, z: -0.394, fov: 15, scale: 0.002  };
 const EVENT_HIP = { x: 0.24, y: -0.24, z: -0.56, fov: 45, scale: 0.0022 };
 const EVENT_ADS = { x: 0, y: -0.11, z: -0.394, fov: 15, scale: 0.0022 };
-const KEYLISONG_HIP = { x: 0.30, y: -0.45, z: -0.52, fov: 45, scale: 0.00215 };
-const KEYLISONG_ADS = { x: 0.30, y: -0.45, z: -0.52, fov: 45, scale: 0.00215 };
+// y가 -0.45라 칼날이 화면 아래로 완전히 벗어나 안 보였음 -> 0.05로 올려서 화면 안에 들어오게 수정
+const KEYLISONG_HIP = { x: 0.30, y: 0.05, z: -0.56, fov: 45, scale: 0.00215 };
+const KEYLISONG_ADS = { x: 0.30, y: 0.05, z: -0.56, fov: 45, scale: 0.00215 };
+const KATANA_HIP = { x: 0.30, y: 0.05, z: -0.56, fov: 45, scale: 0.00215 };
+const KATANA_ADS = { x: 0.30, y: 0.05, z: -0.56, fov: 45, scale: 0.00215 };
+// 근접무기(칼) 전체가 공유하는 공격 타이밍/판정 — 키리송과 카타나 둘 다 이 값을 씀
+const MELEE_WEAPONS = new Set(['keylisong', 'katana']);
 const KEYLISONG_ATTACK_DURATION = 560;
 const KEYLISONG_ATTACK_RANGE = 300;
+const KEYLISONG_WINDUP_END = 0.15; // 공격 진행도 0~15%: 살짝 뒤로 준비
+const KEYLISONG_SLASH_END = 0.55;  // 공격 진행도 15~55%: 실제로 휘두름, 55~100%: 제자리로 회수
 
 // Game state
 let score = 0;
@@ -211,6 +218,12 @@ const WEAPONS = {
     type: 'obj',
     materialPath: 'models/키리송.mtl',
     objectPath: 'models/키리송.obj'
+  },
+  katana: {
+    name: '카타나',
+    type: 'obj',
+    materialPath: 'models/카타나.mtl',
+    objectPath: 'models/카타나.obj'
   }
 };
 let selectedWeaponKey = localStorage.getItem('pixelSniperWeapon') || 'pixel';
@@ -466,7 +479,7 @@ function gunRecoil() {
 function setWeapon(key) {
   if (!WEAPONS[key] || key === selectedWeaponKey) return;
   selectedWeaponKey = key;
-  if (selectedWeaponKey === 'keylisong') {
+  if (MELEE_WEAPONS.has(selectedWeaponKey)) {
     isAiming = false;
     scopeOverlay.style.display = 'none';
     crosshairEl.style.display = 'block';
@@ -644,6 +657,7 @@ function createEventHorizonModel() {
 function getWeaponPose() {
   if (selectedWeaponKey === 'event') return { hip: EVENT_HIP, ads: EVENT_ADS };
   if (selectedWeaponKey === 'keylisong') return { hip: KEYLISONG_HIP, ads: KEYLISONG_ADS };
+  if (selectedWeaponKey === 'katana') return { hip: KATANA_HIP, ads: KATANA_ADS };
   return { hip: HIP, ads: ADS };
 }
 
@@ -657,7 +671,7 @@ function attachGunObject(object, includeScope) {
     gunWrapper.add(scopeGroup);
   }
 
-  if (selectedWeaponKey === 'keylisong') {
+  if (MELEE_WEAPONS.has(selectedWeaponKey)) {
     gunWrapper.add(createKeylisongHandGroup());
   }
 
@@ -694,7 +708,7 @@ function loadGunModel() {
       const center = new THREE.Vector3();
       box.getCenter(center);
       object.position.sub(center);
-      if (selectedWeaponKey === 'keylisong') {
+      if (MELEE_WEAPONS.has(selectedWeaponKey)) {
         object.rotation.z = -Math.PI / 2;
         object.position.x += 10;
         object.position.y -= 28;
@@ -723,7 +737,7 @@ function removeTarget(hit) {
   }
 }
 
-function swingKeylisong() {
+function swingMelee() {
   if (!controls.isLocked) return;
   const now = performance.now();
   if (now - keylisongAttackStart < KEYLISONG_ATTACK_DURATION * 0.45) return;
@@ -738,8 +752,8 @@ function swingKeylisong() {
 
 function shoot() {
   if (!controls.isLocked) return;
-  if (selectedWeaponKey === 'keylisong') {
-    swingKeylisong();
+  if (MELEE_WEAPONS.has(selectedWeaponKey)) {
+    swingMelee();
     return;
   }
   if (ammo <= 0) return;
@@ -774,7 +788,7 @@ document.addEventListener('contextmenu', (e) => e.preventDefault());
 document.addEventListener('mousedown', (e) => {
   if (e.button === 0) {
     shoot();
-  } else if (e.button === 2 && controls.isLocked && selectedWeaponKey !== 'keylisong') {
+  } else if (e.button === 2 && controls.isLocked && !MELEE_WEAPONS.has(selectedWeaponKey)) {
     isAiming = true;
     if (scopeGroup) scopeGroup.visible = false;
     scopeOverlay.style.display = 'block';
@@ -893,27 +907,37 @@ function animate() {
 
   if (gunWrapper) {
     const elapsedAttack = performance.now() - keylisongAttackStart;
-    const attackProgress = selectedWeaponKey === 'keylisong'
+    const isMelee = MELEE_WEAPONS.has(selectedWeaponKey);
+    const attackProgress = isMelee
       ? Math.min(elapsedAttack / KEYLISONG_ATTACK_DURATION, 1)
       : 1;
-    const attacking = selectedWeaponKey === 'keylisong' && attackProgress < 1;
-    const prep = attacking ? Math.min(attackProgress / 0.18, 1) : 0;
-    const thrust = attacking && attackProgress > 0.10 && attackProgress < 0.50
-      ? Math.sin(((attackProgress - 0.10) / 0.40) * Math.PI)
-      : 0;
-    const flip = attacking && attackProgress > 0.28 && attackProgress < 0.78
-      ? Math.sin(((attackProgress - 0.28) / 0.50) * Math.PI)
-      : 0;
-    const settle = attacking ? Math.sin(Math.PI * Math.min(attackProgress, 1)) : 0;
-    const bladeLift = selectedWeaponKey === 'keylisong' ? 0 : 0;
-    const bladeAngle = selectedWeaponKey === 'keylisong' ? -0.68 : 0;
+    const attacking = isMelee && attackProgress < 1;
 
-    gunWrapper.position.x = THREE.MathUtils.lerp(gunWrapper.position.x, aim.x + keylisongAttackSide * 0.08 * flip, t);
-    gunWrapper.position.y = THREE.MathUtils.lerp(gunWrapper.position.y, aim.y + bladeLift + 0.03 * prep - 0.025 * thrust, t);
-    gunWrapper.position.z = THREE.MathUtils.lerp(gunWrapper.position.z, aim.z - 0.04 - 0.20 * thrust + 0.035 * flip, t);
-    gunWrapper.rotation.x = selectedWeaponKey === 'keylisong' ? bladeAngle - 0.55 * thrust + 0.18 * flip : 0;
-    gunWrapper.rotation.y = selectedWeaponKey === 'event' ? Math.PI / 2 : -Math.PI / 2 + (selectedWeaponKey === 'keylisong' ? keylisongAttackSide * (0.28 * prep + 0.42 * flip) : 0);
-    gunWrapper.rotation.z = selectedWeaponKey === 'keylisong' ? keylisongAttackSide * (0.32 + prep * Math.PI * 0.85 + flip * Math.PI * 1.25 + settle * 0.2) : 0;
+    // 베기 동작을 준비(살짝 뒤로) → 휘두르기(최대 각도) → 회수(제자리로) 한 곡선으로 이어서
+    // 칼이 360도 넘게 도는 것과 끝날 때 각도가 툭 끊기는 문제를 없앤다.
+    let swingAngle = 0; // rotation.z에 더해지는 좌우 베기 각도
+    let lungeDepth = 0; // 휘두르는 중간에 앞으로 살짝 나가는 정도
+    if (attacking) {
+      if (attackProgress < KEYLISONG_WINDUP_END) {
+        const p = THREE.MathUtils.smoothstep(attackProgress, 0, KEYLISONG_WINDUP_END);
+        swingAngle = THREE.MathUtils.lerp(0, -0.35, p);
+      } else if (attackProgress < KEYLISONG_SLASH_END) {
+        const p = THREE.MathUtils.smoothstep(attackProgress, KEYLISONG_WINDUP_END, KEYLISONG_SLASH_END);
+        swingAngle = THREE.MathUtils.lerp(-0.35, 1.85, p);
+        lungeDepth = Math.sin(p * Math.PI);
+      } else {
+        const p = THREE.MathUtils.smoothstep(attackProgress, KEYLISONG_SLASH_END, 1);
+        swingAngle = THREE.MathUtils.lerp(1.85, 0, p);
+      }
+    }
+    const bladeAngle = isMelee ? -0.68 : 0;
+
+    gunWrapper.position.x = THREE.MathUtils.lerp(gunWrapper.position.x, aim.x + keylisongAttackSide * 0.05 * lungeDepth, t);
+    gunWrapper.position.y = THREE.MathUtils.lerp(gunWrapper.position.y, aim.y - 0.02 * lungeDepth, t);
+    gunWrapper.position.z = THREE.MathUtils.lerp(gunWrapper.position.z, aim.z - 0.04 - 0.12 * lungeDepth, t);
+    gunWrapper.rotation.x = isMelee ? bladeAngle - 0.25 * lungeDepth : 0;
+    gunWrapper.rotation.y = selectedWeaponKey === 'event' ? Math.PI / 2 : -Math.PI / 2;
+    gunWrapper.rotation.z = isMelee ? keylisongAttackSide * (0.32 + swingAngle) : 0;
     gunWrapper.scale.setScalar(THREE.MathUtils.lerp(gunWrapper.scale.x, aim.scale, t));
   }
 
