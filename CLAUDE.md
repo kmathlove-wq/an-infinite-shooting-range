@@ -73,23 +73,35 @@ capRear z_cam = gunWrapper.z + 122×0.002 = -0.15 → gunWrapper.z = -0.394
 
 ### 근접무기 공통 (키리송, 카타나)
 
-`MELEE_WEAPONS = new Set(['keylisong','katana'])`로 근접무기를 묶어서 판정/공격모션/조준 비활성화
-로직을 공유한다. 새 근접무기를 추가하면 이 Set에 키만 추가하고, `KATANA_HIP`처럼 그 무기 전용
-포즈 상수를 만들면 된다.
+`MELEE_WEAPONS = new Set(['keylisong','katana'])`로 근접무기를 묶어서 "조준(ADS) 비활성화"같은
+공통 판정만 공유한다. 공격 모션 자체는 무기마다 다르게 만듦(아래 참고). 새 근접무기를 추가하면
+이 Set에 키만 추가하고, `KATANA_HIP`처럼 그 무기 전용 포즈 상수를 만들면 된다.
 
 **중요 — HIP/ADS의 y값이 화면 밖으로 나가면 무기가 통째로 안 보임.** 카메라 FOV=45, 거리
 z=-0.56 기준으로 y가 -0.45 같이 너무 작으면(카메라 시야 아래로) 칼 전체가 화면 밑으로 벗어나
 완전히 안 보이는 버그가 있었음(카타나 만들다 발견, 키리송도 같은 문제였음 → 둘 다 y를 0.05로
 수정). 새 무기 포즈를 잡을 때는 브라우저에서 실제로 보이는지 꼭 확인할 것.
 
-### 근접무기(키리송) 공격 모션
+### 근접무기 공격 모션 — 무기별 전용 함수
 
-`animate()` 안에서 `attackProgress`(0~1) 구간을 3단계로 나눠 `swingAngle`을 부드럽게 이어 계산한다
-(준비 0~`KEYLISONG_WINDUP_END` → 휘두르기 ~`KEYLISONG_SLASH_END` → 회수 ~1).
-과거엔 prep/thrust/flip/settle 네 값을 rotation.z에 그냥 더해서 최대 400도 이상 돌고 공격 끝에
-각도가 순간적으로 뚝 끊기는 문제가 있었음 → 하나의 연속 곡선(`THREE.MathUtils.smoothstep` +
-`lerp`)으로 교체, 최대 회전폭을 약 126도로 제한. 비슷한 모션 버그가 또 생기면 이 방식(구간별
-smoothstep 곡선)을 우선 검토.
+손 모델(`createKeylisongHandGroup`)은 삭제함 — 화면을 가리고 키리송 칼날(사실 열쇠 몸통)을
+잘못 잡는 것처럼 보여서 사용자 요청으로 제거. 근접무기는 팔 없이 무기만 보인다.
+
+키리송·카타나는 더 이상 로직을 공유하지 않고 `katanaSwingPose(p)` / `keylisongSwingPose(p)`
+두 함수로 완전히 분리되어 있다(각각 `KATANA_*` / `KEYLISONG_*` 상수 사용). `animate()`는
+`selectedWeaponKey`로 둘 중 하나를 골라 호출만 한다. 새 근접무기를 추가하면 이 패턴대로
+전용 pose 함수 + 전용 상수를 새로 만들 것 (공유 로직으로 되돌리지 말 것 — 무기마다 느낌이
+달라야 한다는 게 이번 요청의 핵심이었음).
+
+- `skewedEase(p, peak)`: 0→peak까지 가속, peak→1까지 감속하는 2차함수 곡선. peak 지점에서
+  제일 빠르게 움직인다. 검술 자료 기준 카타나는 peak=0.65(베기 60~70% 지점이 최고속도),
+  둔기인 키리송은 peak=0.72(무거운 무기라 가속 구간이 더 김 — Vermintide 2 참고).
+- 카타나: 준비 20%(살짝 당김) → 베기 42%(대각선으로 크게 휘두르며 앞으로 뻗음) → 회수 38%.
+  총 440ms, 사거리 340(라이벌 위키: "long-reaching slashes").
+  ["fast, long-reaching slashes"](https://robloxrivals.fandom.com/wiki/Katana)
+- 키리송(황금 열쇠): 준비 28%(크게 감아올림) → 내려찍기 34%(위→아래 대각 스매시) → 회수 38%.
+  총 700ms(카타나보다 느림), 회수 구간 끝에 감쇠 진동(`settle`)을 한 번 넣어 묵직한 느낌을 줌.
+  ["heavy attacks need longer recovery, 0.8–1.5s"](https://mocaponline.com/blogs/mocap-news/sword-melee-animation-guide)
 
 ## 조작키
 

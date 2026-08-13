@@ -180,12 +180,79 @@ const KEYLISONG_HIP = { x: 0.30, y: 0.05, z: -0.56, fov: 45, scale: 0.00215 };
 const KEYLISONG_ADS = { x: 0.30, y: 0.05, z: -0.56, fov: 45, scale: 0.00215 };
 const KATANA_HIP = { x: 0.30, y: 0.05, z: -0.56, fov: 45, scale: 0.00215 };
 const KATANA_ADS = { x: 0.30, y: 0.05, z: -0.56, fov: 45, scale: 0.00215 };
-// 근접무기(칼) 전체가 공유하는 공격 타이밍/판정 — 키리송과 카타나 둘 다 이 값을 씀
 const MELEE_WEAPONS = new Set(['keylisong', 'katana']);
-const KEYLISONG_ATTACK_DURATION = 560;
+
+// 카타나: 라이벌처럼 빠르고 길게 뻗는 대각선 베기. 준비 20% → 베기 42% → 회수 38%
+const KATANA_ATTACK_DURATION = 440;
+const KATANA_ATTACK_RANGE = 340;
+const KATANA_WINDUP_END = 0.20;
+const KATANA_SLASH_END = 0.62;
+const KATANA_SWING_PEAK = 0.65; // 베기 구간 중 65% 지점에서 가장 빠르게 (실제 검술 자료 기준)
+
+// 키리송(커다란 황금 열쇠): 묵직하게 크게 감았다가 내려찍는 둔기형 스매시. 준비 28% → 내려찍기 34% → 회수 38%
+const KEYLISONG_ATTACK_DURATION = 700;
 const KEYLISONG_ATTACK_RANGE = 300;
-const KEYLISONG_WINDUP_END = 0.15; // 공격 진행도 0~15%: 살짝 뒤로 준비
-const KEYLISONG_SLASH_END = 0.55;  // 공격 진행도 15~55%: 실제로 휘두름, 55~100%: 제자리로 회수
+const KEYLISONG_WINDUP_END = 0.28;
+const KEYLISONG_SLASH_END = 0.62;
+const KEYLISONG_SWING_PEAK = 0.72; // 무거운 무기라 가속 구간이 더 길게(더 늦게 최고속도)
+
+// p(0~1)를 입력하면 peak 지점에서 가장 빠르게 움직이는 0~1 곡선을 돌려준다.
+// (준비→가속→감속 구조를 2차함수 두 개로 이어붙인 것. 검술 자료의 "스윙 중간~후반에 최고속도" 원칙 반영)
+function skewedEase(p, peak) {
+  if (p <= peak) {
+    const t = THREE.MathUtils.clamp(p / peak, 0, 1);
+    return peak * t * t;
+  }
+  const t = THREE.MathUtils.clamp((p - peak) / (1 - peak), 0, 1);
+  return peak + (1 - peak) * (1 - (1 - t) * (1 - t));
+}
+
+// 카타나 전용 모션: 빠르고 길게 뻗는 대각선 베기 (라이벌 참고 — Katana Wiki: "fast, long-reaching slashes")
+function katanaSwingPose(p) {
+  if (p < KATANA_WINDUP_END) {
+    const e = THREE.MathUtils.smoothstep(p, 0, KATANA_WINDUP_END);
+    return { rotZ: THREE.MathUtils.lerp(0, -0.30, e), rotX: THREE.MathUtils.lerp(0, 0.12, e), lunge: 0 };
+  }
+  if (p < KATANA_SLASH_END) {
+    const local = (p - KATANA_WINDUP_END) / (KATANA_SLASH_END - KATANA_WINDUP_END);
+    const e = skewedEase(local, KATANA_SWING_PEAK);
+    return {
+      rotZ: THREE.MathUtils.lerp(-0.30, 2.05, e),
+      rotX: THREE.MathUtils.lerp(0.12, -0.35, e),
+      lunge: Math.sin(e * Math.PI)
+    };
+  }
+  const local = (p - KATANA_SLASH_END) / (1 - KATANA_SLASH_END);
+  const e = THREE.MathUtils.smoothstep(local, 0, 1);
+  return { rotZ: THREE.MathUtils.lerp(2.05, 0, e), rotX: THREE.MathUtils.lerp(-0.35, 0, e), lunge: 0 };
+}
+
+// 키리송(황금 열쇠) 전용 모션: 크게 감았다가 내려찍는 묵직한 둔기 스매시.
+// 참고자료 기준 무거운 무기 특징을 그대로 반영: 준비 동작이 크고, 회수가 느리며,
+// 끝에서 무게감 있는 출렁임(settle)이 한 번 있다.
+function keylisongSwingPose(p) {
+  if (p < KEYLISONG_WINDUP_END) {
+    const e = THREE.MathUtils.smoothstep(p, 0, KEYLISONG_WINDUP_END);
+    return { rotZ: THREE.MathUtils.lerp(0, -0.55, e), rotX: THREE.MathUtils.lerp(0, 0.65, e), lunge: 0 };
+  }
+  if (p < KEYLISONG_SLASH_END) {
+    const local = (p - KEYLISONG_WINDUP_END) / (KEYLISONG_SLASH_END - KEYLISONG_WINDUP_END);
+    const e = skewedEase(local, KEYLISONG_SWING_PEAK);
+    return {
+      rotZ: THREE.MathUtils.lerp(-0.55, 1.55, e),
+      rotX: THREE.MathUtils.lerp(0.65, -0.95, e),
+      lunge: Math.sin(e * Math.PI) * 1.15
+    };
+  }
+  const local = (p - KEYLISONG_SLASH_END) / (1 - KEYLISONG_SLASH_END);
+  const e = THREE.MathUtils.smoothstep(local, 0, 1);
+  const settle = Math.exp(-local * 6) * Math.sin(local * Math.PI * 5) * 0.05;
+  return {
+    rotZ: THREE.MathUtils.lerp(1.55, 0, e) + settle,
+    rotX: THREE.MathUtils.lerp(-0.95, 0, e) + settle,
+    lunge: 0
+  };
+}
 
 // Game state
 let score = 0;
@@ -495,47 +562,6 @@ function updateWeaponButtons() {
   });
 }
 
-function createKeylisongHandGroup() {
-  const group = new THREE.Group();
-  const skinMat = new THREE.MeshStandardMaterial({ color: 0xf0c09a, roughness: 0.76 });
-  const sleeveMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.58 });
-  const cuffMat = new THREE.MeshStandardMaterial({ color: 0xd9dee8, roughness: 0.65 });
-
-  const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(28, 36, 120, 18), sleeveMat);
-  sleeve.rotation.set(0.15, 0.05, Math.PI / 2.15);
-  sleeve.position.set(58, -118, 4);
-  sleeve.scale.set(1, 0.82, 1);
-  group.add(sleeve);
-
-  const cuff = new THREE.Mesh(new THREE.CylinderGeometry(30, 30, 14, 18), cuffMat);
-  cuff.rotation.set(0.15, 0.05, Math.PI / 2.15);
-  cuff.position.set(6, -82, 4);
-  cuff.scale.set(1, 0.82, 1);
-  group.add(cuff);
-
-  const palm = new THREE.Mesh(new THREE.SphereGeometry(24, 20, 14), skinMat);
-  palm.position.set(-18, -55, 5);
-  palm.scale.set(1.15, 0.62, 0.78);
-  group.add(palm);
-
-  const grip = new THREE.Mesh(new THREE.CylinderGeometry(6, 6.5, 56, 12), skinMat);
-  grip.rotation.set(Math.PI / 2, 0.18, 0.05);
-  grip.position.set(-23, -34, 5);
-  group.add(grip);
-
-  const thumb = new THREE.Mesh(new THREE.CylinderGeometry(6, 6, 42, 12), skinMat);
-  thumb.rotation.set(0.72, -0.2, 1.04);
-  thumb.position.set(-2, -42, 18);
-  group.add(thumb);
-
-  const indexFinger = new THREE.Mesh(new THREE.CylinderGeometry(4.8, 5.2, 46, 10), skinMat);
-  indexFinger.rotation.set(1.2, 0.22, -0.58);
-  indexFinger.position.set(-30, -38, -9);
-  group.add(indexFinger);
-
-  return group;
-}
-
 function createScopeGroup() {
   const scopeMat = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.8, roughness: 0.3 });
   const scopeTube = new THREE.Mesh(new THREE.CylinderGeometry(5, 5, 150, 16), scopeMat);
@@ -671,10 +697,6 @@ function attachGunObject(object, includeScope) {
     gunWrapper.add(scopeGroup);
   }
 
-  if (MELEE_WEAPONS.has(selectedWeaponKey)) {
-    gunWrapper.add(createKeylisongHandGroup());
-  }
-
   gunWrapper.scale.setScalar(pose.scale);
   gunWrapper.rotation.y = selectedWeaponKey === 'event' ? Math.PI / 2 : -Math.PI / 2;
   gunWrapper.position.set(pose.x, pose.y, pose.z);
@@ -739,13 +761,16 @@ function removeTarget(hit) {
 
 function swingMelee() {
   if (!controls.isLocked) return;
+  const isKatana = selectedWeaponKey === 'katana';
+  const duration = isKatana ? KATANA_ATTACK_DURATION : KEYLISONG_ATTACK_DURATION;
+  const range = isKatana ? KATANA_ATTACK_RANGE : KEYLISONG_ATTACK_RANGE;
   const now = performance.now();
-  if (now - keylisongAttackStart < KEYLISONG_ATTACK_DURATION * 0.45) return;
+  if (now - keylisongAttackStart < duration * 0.45) return;
   keylisongAttackStart = now;
   keylisongAttackSide *= -1;
   raycaster.setFromCamera({ x: 0, y: 0 }, camera);
   const hits = raycaster.intersectObjects(targets);
-  if (hits.length > 0 && hits[0].distance <= KEYLISONG_ATTACK_RANGE) {
+  if (hits.length > 0 && hits[0].distance <= range) {
     removeTarget(hits[0]);
   }
 }
@@ -906,38 +931,26 @@ function animate() {
   const aim = isAiming ? pose.ads : pose.hip;
 
   if (gunWrapper) {
-    const elapsedAttack = performance.now() - keylisongAttackStart;
+    const isKatana = selectedWeaponKey === 'katana';
     const isMelee = MELEE_WEAPONS.has(selectedWeaponKey);
-    const attackProgress = isMelee
-      ? Math.min(elapsedAttack / KEYLISONG_ATTACK_DURATION, 1)
-      : 1;
+    const meleeDuration = isKatana ? KATANA_ATTACK_DURATION : KEYLISONG_ATTACK_DURATION;
+    const elapsedAttack = performance.now() - keylisongAttackStart;
+    const attackProgress = isMelee ? Math.min(elapsedAttack / meleeDuration, 1) : 1;
     const attacking = isMelee && attackProgress < 1;
 
-    // 베기 동작을 준비(살짝 뒤로) → 휘두르기(최대 각도) → 회수(제자리로) 한 곡선으로 이어서
-    // 칼이 360도 넘게 도는 것과 끝날 때 각도가 툭 끊기는 문제를 없앤다.
-    let swingAngle = 0; // rotation.z에 더해지는 좌우 베기 각도
-    let lungeDepth = 0; // 휘두르는 중간에 앞으로 살짝 나가는 정도
-    if (attacking) {
-      if (attackProgress < KEYLISONG_WINDUP_END) {
-        const p = THREE.MathUtils.smoothstep(attackProgress, 0, KEYLISONG_WINDUP_END);
-        swingAngle = THREE.MathUtils.lerp(0, -0.35, p);
-      } else if (attackProgress < KEYLISONG_SLASH_END) {
-        const p = THREE.MathUtils.smoothstep(attackProgress, KEYLISONG_WINDUP_END, KEYLISONG_SLASH_END);
-        swingAngle = THREE.MathUtils.lerp(-0.35, 1.85, p);
-        lungeDepth = Math.sin(p * Math.PI);
-      } else {
-        const p = THREE.MathUtils.smoothstep(attackProgress, KEYLISONG_SLASH_END, 1);
-        swingAngle = THREE.MathUtils.lerp(1.85, 0, p);
-      }
-    }
+    // 무기마다 따로 만든 모션 곡선(katanaSwingPose / keylisongSwingPose)에서
+    // 이번 프레임의 회전/찌르기 정도를 가져온다.
+    const swing = attacking
+      ? (isKatana ? katanaSwingPose(attackProgress) : keylisongSwingPose(attackProgress))
+      : { rotZ: 0, rotX: 0, lunge: 0 };
     const bladeAngle = isMelee ? -0.68 : 0;
 
-    gunWrapper.position.x = THREE.MathUtils.lerp(gunWrapper.position.x, aim.x + keylisongAttackSide * 0.05 * lungeDepth, t);
-    gunWrapper.position.y = THREE.MathUtils.lerp(gunWrapper.position.y, aim.y - 0.02 * lungeDepth, t);
-    gunWrapper.position.z = THREE.MathUtils.lerp(gunWrapper.position.z, aim.z - 0.04 - 0.12 * lungeDepth, t);
-    gunWrapper.rotation.x = isMelee ? bladeAngle - 0.25 * lungeDepth : 0;
+    gunWrapper.position.x = THREE.MathUtils.lerp(gunWrapper.position.x, aim.x + keylisongAttackSide * 0.05 * swing.lunge, t);
+    gunWrapper.position.y = THREE.MathUtils.lerp(gunWrapper.position.y, aim.y - 0.02 * swing.lunge, t);
+    gunWrapper.position.z = THREE.MathUtils.lerp(gunWrapper.position.z, aim.z - 0.04 - 0.12 * swing.lunge, t);
+    gunWrapper.rotation.x = isMelee ? bladeAngle + swing.rotX : 0;
     gunWrapper.rotation.y = selectedWeaponKey === 'event' ? Math.PI / 2 : -Math.PI / 2;
-    gunWrapper.rotation.z = isMelee ? keylisongAttackSide * (0.32 + swingAngle) : 0;
+    gunWrapper.rotation.z = isMelee ? keylisongAttackSide * (0.32 + swing.rotZ) : 0;
     gunWrapper.scale.setScalar(THREE.MathUtils.lerp(gunWrapper.scale.x, aim.scale, t));
   }
 
